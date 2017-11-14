@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<table>
+    <tr>
+        <th>Flag</th>
+        <th>Sploit</th>
+        <th>Team</th>
+        <th>Time</th>
+        <th>Status</th>
+        <th>Checksystem Response</th>
+    </tr>
+
+{% for item in flags %}
+    <tr>
+        <td>{{ item.flag }}</td>
+        <td>{{ item.sploit }}</td>
+        <td>{{ item.team }}</td>
+        <td>{{ item.time }}</td>
+        <td>{{ item.status }}</td>
+        <td>{{ item.checksystem_response }}</td>
+    </tr>
+{% endfor %}
+</table>
