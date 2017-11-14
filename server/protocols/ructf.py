@@ -1,7 +1,7 @@
 import socket
 
-from .. import app
-from ..models import FlagStatus, SubmitResult
+from server import app
+from server.models import FlagStatus, SubmitResult
 
 
 RESPONSES = {

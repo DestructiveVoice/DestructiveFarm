@@ -1,13 +1,13 @@
 from themis.finals.attack.helper import Helper
 from themis.finals.attack.result import Result
 
-from ..models import FlagStatus, SubmitResult
+from server.models import FlagStatus, SubmitResult
 
 
 RESPONSES = {
     FlagStatus.ACCEPTED: [Result.SUCCESS_FLAG_ACCEPTED],
     FlagStatus.REJECTED: [Result.ERROR_FLAG_EXPIRED, Result.ERROR_FLAG_YOURS,
-                          Result.ERROR_FLAG_EXPIRED, Result.ERROR_FLAG_NOT_FOUND],
+                          Result.ERROR_FLAG_SUBMITTED, Result.ERROR_FLAG_NOT_FOUND],
 }
 
 
