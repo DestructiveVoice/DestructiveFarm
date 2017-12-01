@@ -1,6 +1,7 @@
+import time
 from datetime import datetime
 
-from flask import render_template
+from flask import render_template, request
 
 from server import app, database
 
@@ -12,6 +13,24 @@ def timestamp_to_datetime(s):
 
 @app.route('/')
 def index():
-    flags = database.query('SELECT * FROM flags ORDER BY time DESC')
+    query = 'SELECT * FROM flags'
+    conditions = []
+    args = []
 
-    return render_template('index.html', flags=flags)
+    for column in ['sploit', 'team', 'status']:
+        if column in request.args:
+            conditions.append(column + ' = ?')
+            args.append(request.args[column])
+
+    if 'last-minutes' in request.args:
+        start_time = round(time.time() - int(request.args['last-minutes']) * 60)
+        conditions.append('time >= ?')
+        args.append(start_time)
+
+    if conditions:
+        query += ' WHERE ' + ' AND '.join(conditions)
+    query += ' ORDER BY time DESC'
+    flags = database.query(query, args)
+
+    return render_template('index.html', flags=flags,
+                           has_conditions=bool(conditions))

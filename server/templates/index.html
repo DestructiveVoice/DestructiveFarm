@@ -15,6 +15,18 @@
 </head>
 <body>
     <h1>Destructive Farm Server</h1>
+
+    <p>
+        Last <a href="/?last-minutes=2">2</a>, <a href="/?last-minutes=5">5</a>,
+        <a href="/?last-minutes=10">10</a> minutes
+    </p>
+
+    {% if has_conditions %}
+    <p>
+        <a href="/">Reset filters</a>
+    </p>
+    {% endif %}
+
     <table>
         <tr>
             <th>Flag</th>
@@ -28,10 +40,10 @@
     {% for item in flags %}
         <tr>
             <td>{{ item.flag }}</td>
-            <td>{{ item.sploit }}</td>
-            <td>{{ item.team }}</td>
+            <td><a href="/?sploit={{ item.sploit }}">{{ item.sploit }}</a></td>
+            <td><a href="/?team={{ item.team }}">{{ item.team }}</a></td>
             <td>{{ (item.time|timestamp_to_datetime).strftime('%H:%M:%S') }}</td>
-            <td>{{ item.status }}</td>
+            <td><a href="/?status={{ item.status }}">{{ item.status }}</a></td>
             <td>{{ item.checksystem_response }}</td>
         </tr>
     {% endfor %}
