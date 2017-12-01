@@ -3,6 +3,7 @@
 import argparse
 import itertools
 import json
+import logging
 import os
 import re
 import stat
@@ -12,6 +13,7 @@ import time
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from math import ceil
+from random import randint
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
@@ -19,6 +21,9 @@ from urllib.request import Request, urlopen
 if sys.version_info < (3, 4):
     print('[-] Support of Python < 3.4 is not implemented yet')
     sys.exit(1)
+
+
+logging.basicConfig(format='%(asctime)s \033[33m%(levelname)s\033[0m %(message)s', datefmt='%H:%M:%S')
 
 
 def parse_args():
@@ -35,6 +40,10 @@ def parse_args():
                         help='Rerun the sploit on all teams each N seconds'
                              '(too little will make time limits for sploits smaller,'
                              'too big will miss flags from some rounds)')
+
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help="Always display sploits' stdout "
+                             "(otherwise it will be shown only during the first attack)")
 
     return parser.parse_args()
 
@@ -139,26 +148,45 @@ def run_post_loop(args):
                 print("[*] The flags will be posted next time")
 
 
-def run_sploit(args, team_name, team_addr, iter_no, max_runtime, flag_format):
+def highlight(text):
+    if os.name == 'nt':
+        return text
+
+    return '\033[1;{}m'.format(randint(31, 36)) + text + '\033[0m'
+
+
+def display_output(team_name, output):
+    text = output.decode(errors='replace').splitlines()
+    prefix = highlight(team_name + ': ')
+    lines = [prefix + line for line in text]
+    print('\n'.join(lines))
+
+
+def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
     need_close_fds = (os.name != 'nt')
-    proc = subprocess.Popen([args.sploit, team_addr],
+    proc = subprocess.Popen([os.path.abspath(args.sploit), team_addr],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             bufsize=1, close_fds=need_close_fds)
     try:
-        outs, _ = proc.communicate(timeout=max_runtime)
+        output, _ = proc.communicate(timeout=max_runtime)
     except subprocess.TimeoutExpired:
-        print('[~] Killing sploit for team "{}": {}'.format(team_name, team_addr))
+        print('[~] Killing sploit for "{}": {}'.format(team_name, team_addr))
         proc.kill()
-        outs, _ = proc.communicate()
-    # TODO: Get outputs in the real-time
+        output, _ = proc.communicate()
+    # TODO: Get flags from the output in the real-time
 
-    flags = flag_format.findall(outs)
+    if attack_no == 0 or args.verbose:
+        display_output(team_name, output)
 
-    with flags_lock:
-        for item in flags:
-            if item not in flags_seen:
-                flags_seen.add(item)
-                flag_queue.append({'flag': item, 'team': team_name})
+    flags = flag_format.findall(output)
+    if flags:
+        print('[+] Got {} flags from "{}": {}'.format(len(flags), team_name, flags))
+
+        with flags_lock:
+            for item in flags:
+                if item not in flags_seen:
+                    flags_seen.add(item)
+                    flag_queue.append({'flag': item, 'team': team_name})
 
 
 def main(args):
@@ -174,18 +202,18 @@ def main(args):
     # FIXME: Don't use daemon=True, exit from the thread properly
 
     config = None
-    for iter_no in once_in_a_period(args.attack_period):
-        print('[*] Launching an attack (iteration {})'.format(iter_no))
+    for attack_no in once_in_a_period(args.attack_period):
+        print('[*] Launching an attack (iteration {})'.format(attack_no))
 
         try:
             config = get_config(args)
         except Exception as e:
-            print("[{}] Can't get config from the server: {}".format('-' if iter_no == 0 else '~', repr(e)))
-            if iter_no == 0:
+            print("[{}] Can't get config from the server: {}".format('-' if attack_no == 0 else '~', repr(e)))
+            if attack_no == 0:
                 return
             print('[*] Using the old config')
 
-        if iter_no == 0:
+        if attack_no == 0:
             validate_args(args, config)
         max_runtime = args.attack_period / ceil(args.pool_size / len(config['TEAMS']))
         print("[*] Time limit for a sploit instance: {:.2f} sec "
@@ -195,7 +223,7 @@ def main(args):
 
         pool = ThreadPoolExecutor(max_workers=args.pool_size)
         for team_name, team_addr in config['TEAMS'].items():
-            pool.submit(run_sploit, args, team_name, team_addr, iter_no, max_runtime, flag_format)
+            pool.submit(run_sploit, args, team_name, team_addr, attack_no, max_runtime, flag_format)
         pool.shutdown(wait=False)
 
 

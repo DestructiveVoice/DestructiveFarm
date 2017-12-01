@@ -2,7 +2,8 @@ CONFIG = {
     # The clients will run sploits on TEAMS and
     # fetch FLAG_FORMAT from sploits' stdout.
     'TEAMS': {
-        'Bushwhackers': '10.0.0.77',
+        'Bushwhackers': '10.0.0.1',
+        'Corrupted Reflection': '10.0.0.2',
     },
     'FLAG_FORMAT': r'\w{31}=',
 
