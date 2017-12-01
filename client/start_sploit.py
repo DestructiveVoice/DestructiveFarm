@@ -30,6 +30,17 @@ if sys.version_info < (3, 4):
     sys.exit(1)
 
 
+HEADER = '''
+____            _                   _   _             _____
+|  _ \  ___  ___| |_ _ __ _   _  ___| |_(_)_   _____  |  ___|_ _ _ __ _ __ ___
+| | | |/ _ \/ __| __| '__| | | |/ __| __| \ \ / / _ \ | |_ / _` | '__| '_ ` _ `
+| |_| |  __/\__ \ |_| |  | |_| | (__| |_| |\ V /  __/ |  _| (_| | |  | | | | |
+|____/ \___||___/\__|_|   \__,_|\___|\__|_| \_/ \___| |_|  \__,_|_|  |_| |_| |_
+
+Note that this software is highly destructive. Keep it away from children.
+'''[1:]
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Run a sploit on all teams in a loop')
 
@@ -111,7 +122,7 @@ POST_FLAG_LIMIT = 10000
 def validate_args(args, config):
     min_attack_period = config['FLAG_LIFETIME'] - config['SUBMIT_PERIOD'] - POST_PERIOD
     if args.attack_period >= min_attack_period:
-        logging.warning("--attack-period should be < {:.2f} sec, "
+        logging.warning("--attack-period should be < {:.1f} sec, "
                         "otherwise the sploit will not have time "
                         "to catch flags for each round before their expiration".format(min_attack_period))
 
@@ -162,10 +173,14 @@ def highlight(text):
     return '\033[1;{}m'.format(random.choice(HIGHLIGHT_COLORS)) + text + '\033[0m'
 
 
+display_output_lock = threading.RLock()
+
+
 def display_output(team_name, output):
     prefix = highlight(team_name + ': ')
     lines = [prefix + line for line in output.splitlines()]
-    print('\n'.join(lines))
+    with display_output_lock:
+        print('\n' + '\n'.join(lines) + '\n')
 
 
 def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
@@ -203,6 +218,8 @@ def main(args):
         logging.critical(repr(e))
         return
 
+    print(highlight(HEADER))
+
     logging.info('Connecting to the farm server at {}'.format(args.server_url))
 
     threading.Thread(target=lambda: run_post_loop(args), daemon=True).start()
@@ -222,8 +239,8 @@ def main(args):
 
         if attack_no == 0:
             validate_args(args, config)
-        max_runtime = args.attack_period / ceil(args.pool_size / len(config['TEAMS']))
-        logging.info("Time limit for a sploit instance: {:.2f} sec "
+        max_runtime = args.attack_period / ceil(len(config['TEAMS']) / args.pool_size)
+        logging.info("Time limit for a sploit instance: {:.1f} sec "
                      "(if this isn't enough, increase --pool-size or --attack-period)".format(max_runtime))
 
         flag_format = re.compile(config['FLAG_FORMAT'])
