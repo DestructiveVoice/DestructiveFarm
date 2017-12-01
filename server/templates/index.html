@@ -1,22 +1,40 @@
 <!DOCTYPE html>
-<table>
-    <tr>
-        <th>Flag</th>
-        <th>Sploit</th>
-        <th>Team</th>
-        <th>Time</th>
-        <th>Status</th>
-        <th>Checksystem Response</th>
-    </tr>
+<html>
+<head>
+    <title>Farm Server</title>
+    <style>
+        table {
+            border-collapse: collapse;
+        }
 
-{% for item in flags %}
-    <tr>
-        <td>{{ item.flag }}</td>
-        <td>{{ item.sploit }}</td>
-        <td>{{ item.team }}</td>
-        <td>{{ item.time }}</td>
-        <td>{{ item.status }}</td>
-        <td>{{ item.checksystem_response }}</td>
-    </tr>
-{% endfor %}
-</table>
+        th, td {
+            border: 1px solid black;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Destructive Farm Server</h1>
+    <table>
+        <tr>
+            <th>Flag</th>
+            <th>Sploit</th>
+            <th>Team</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Checksystem Response</th>
+        </tr>
+
+    {% for item in flags %}
+        <tr>
+            <td>{{ item.flag }}</td>
+            <td>{{ item.sploit }}</td>
+            <td>{{ item.team }}</td>
+            <td>{{ (item.time|timestamp_to_datetime).strftime('%H:%M:%S') }}</td>
+            <td>{{ item.status }}</td>
+            <td>{{ item.checksystem_response }}</td>
+        </tr>
+    {% endfor %}
+    </table>
+</body>
+</html>
