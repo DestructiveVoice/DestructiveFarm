@@ -54,8 +54,9 @@ def run_loop():
         db = database.get()
 
     while True:
-        config = reloader.get_config()
         submit_start_time = time.time()
+
+        config = reloader.get_config()
 
         skip_time = round(submit_start_time - config['FLAG_LIFETIME'])
         db.execute("UPDATE flags SET status = ? WHERE status = ? AND time < ?",
