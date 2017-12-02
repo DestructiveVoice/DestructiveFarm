@@ -106,7 +106,7 @@ def get_config(args):
         if conn.status != 200:
             raise APIException(conn.read())
 
-        return json.load(conn)
+        return json.loads(conn.read().decode())
 
 
 def post_flags(args, flags):
@@ -260,7 +260,7 @@ def main(args):
         try:
             config = get_config(args)
         except Exception as e:
-            logging.error("Can't get config from the server: {}".format('-' if attack_no == 0 else '~', repr(e)))
+            logging.error("Can't get config from the server: {}".format(repr(e)))
             if attack_no == 0:
                 return
             logging.info('Using the old config')
