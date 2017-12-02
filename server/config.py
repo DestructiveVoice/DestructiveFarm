@@ -363,7 +363,7 @@ CONFIG = {
 
     # The clients will run sploits on TEAMS and
     # fetch FLAG_FORMAT from sploits' stdout.
-    'TEAMS': {name: 'team{}.cloud.ructfe.org'.format(i + 1)
+    'TEAMS': {name: '10.{A}.{B}.2'.format(A=60 + (i + 1) // 256, B=(i + 1) % 256)
               for i, name in enumerate(TEAM_NAMES) if name != 'Destructive Voice'},
     'FLAG_FORMAT': r'\w{31}=',
 
