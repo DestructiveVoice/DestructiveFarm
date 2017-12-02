@@ -1,4 +1,6 @@
 CONFIG = {
+    # Don't forget to remove the old database (flags.sqlite) before each competition.
+
     # The clients will run sploits on TEAMS and
     # fetch FLAG_FORMAT from sploits' stdout.
     'TEAMS': {
