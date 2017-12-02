@@ -2,8 +2,7 @@ CONFIG = {
     # The clients will run sploits on TEAMS and
     # fetch FLAG_FORMAT from sploits' stdout.
     'TEAMS': {
-        'Bushwhackers': '10.0.0.1',
-        'Corrupted Reflection': '10.0.0.2',
+        'Team #{}'.format(i): '10.0.0.{}'.format(i) for i in range(1, 500)
     },
     'FLAG_FORMAT': r'\w{31}=',
 
@@ -11,7 +10,7 @@ CONFIG = {
     # The protocol must be a module in protocols/ directory.
     # RuCTF(E) and VolgaCTF checksystems are supported out-of-the-box.
     'SYSTEM_PROTOCOL': 'ructf',
-    'SYSTEM_HOST': 'f.ructf.org',
+    'SYSTEM_HOST': '127.0.0.1',
     'SYSTEM_PORT': 31337,
     'SYSTEM_TIMEOUT': 5,
 

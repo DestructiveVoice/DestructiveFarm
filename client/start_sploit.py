@@ -56,9 +56,8 @@ def parse_args():
                              '(too little will make time limits for sploits smaller,'
                              'too big will miss flags from some rounds)')
 
-    parser.add_argument('-v', '--verbose', action='store_true',
-                        help="Always display sploits' stdout "
-                             "(otherwise it will be shown only during the first attack)")
+    parser.add_argument('-v', '--verbose-attacks', type=int, default=1,
+                        help="Sploits' outputs and found flags will be shown for the N first attacks")
 
     return parser.parse_args()
 
@@ -95,8 +94,11 @@ class APIException(Exception):
     pass
 
 
+SERVER_TIMEOUT = 5
+
+
 def get_config(args):
-    with urlopen(urljoin(args.server_url, '/api/get_config')) as conn:
+    with urlopen(urljoin(args.server_url, '/api/get_config'), timeout=SERVER_TIMEOUT) as conn:
         if conn.status != 200:
             raise APIException(conn.read())
 
@@ -110,7 +112,7 @@ def post_flags(args, flags):
 
     req = Request(urljoin(args.server_url, '/api/post_flags'))
     req.add_header('Content-Type', 'application/json')
-    with urlopen(req, data=json.dumps(data).encode()) as conn:
+    with urlopen(req, data=json.dumps(data).encode(), timeout=SERVER_TIMEOUT) as conn:
         if conn.status != 200:
             raise APIException(conn.read())
 
@@ -183,27 +185,40 @@ def display_output(team_name, output):
         print('\n' + '\n'.join(lines) + '\n')
 
 
+killed_runs = total_runs = 0
+run_counter_lock = threading.RLock()
+
+
 def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
+    global killed_runs, total_runs
+
     need_close_fds = (os.name != 'nt')
     proc = subprocess.Popen([os.path.abspath(args.sploit), team_addr],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             bufsize=1, close_fds=need_close_fds)
     try:
         output, _ = proc.communicate(timeout=max_runtime)
+        killed = False
     except subprocess.TimeoutExpired:
         logging.warning('Killing sploit for "{}": {}'.format(team_name, team_addr))
         proc.kill()
         output, _ = proc.communicate()
+        killed = True
+
+    with run_counter_lock:
+        killed_runs += killed
+        total_runs += 1
+
     output = output.decode(errors='replace')
+    flags = flag_format.findall(output)
     # TODO: Get flags from the output in the real-time
 
-    if attack_no == 0 or args.verbose:
+    if attack_no < args.verbose_attacks:
         display_output(team_name, output)
+        if flags:
+            logging.debug('Got {} flags from "{}": {}'.format(len(flags), team_name, flags))
 
-    flags = flag_format.findall(output)
     if flags:
-        logging.debug('Got {} flags from "{}": {}'.format(len(flags), team_name, flags))
-
         with flags_lock:
             for item in flags:
                 if item not in flags_seen:
@@ -240,8 +255,12 @@ def main(args):
         if attack_no == 0:
             validate_args(args, config)
         max_runtime = args.attack_period / ceil(len(config['TEAMS']) / args.pool_size)
-        logging.info("Time limit for a sploit instance: {:.1f} sec "
-                     "(if this isn't enough, increase --pool-size or --attack-period)".format(max_runtime))
+        logging.info('Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
+
+        if total_runs > 0:
+            run_share_killed = float(killed_runs) / total_runs
+            logging.info('{:.1f}% of instances were killed (if this is too much, '
+                         'increase --pool-size or --attack-period)'.format(run_share_killed * 100))
 
         flag_format = re.compile(config['FLAG_FORMAT'])
 
