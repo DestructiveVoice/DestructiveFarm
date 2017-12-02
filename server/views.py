@@ -32,8 +32,14 @@ def index():
     if conditions:
         query += ' WHERE ' + ' AND '.join(conditions)
     query += ' ORDER BY time DESC'
+
+    query += ' LIMIT ?'
+    limit = int(request.args.get('limit', 100))
+    args.append(limit)
+
     flags = database.query(query, args)
 
     gen_time = time.time() - start_time
     return render_template('index.html', flags=flags,
-                           has_conditions=bool(conditions), gen_time=gen_time)
+                           limit=limit, has_conditions=bool(conditions),
+                           gen_time=gen_time)

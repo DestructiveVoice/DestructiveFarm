@@ -20,6 +20,7 @@ def submit_flags(flags, config):
     if b'Enter your flags' not in greeting:
         raise Exception('Checksystem does not greet us')
 
+    unknown_responses = set()
     for item in flags:
         sock.sendall(item.flag.encode() + b'\n')
         response = sock.recv(4096).strip().lower().decode()
@@ -30,7 +31,9 @@ def submit_flags(flags, config):
                 break
         else:
             found_status = FlagStatus.QUEUED
-            app.logger.warning('Response is not recognized (flag will be resent): %s', response)
+            if response not in unknown_responses:
+                unknown_responses.add(response)
+                app.logger.warning('Unknown checksystem response (flag will be resent): %s', response)
 
         yield SubmitResult(item.flag, found_status, response)
 
