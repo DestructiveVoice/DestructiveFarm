@@ -59,6 +59,9 @@ def parse_args():
     parser.add_argument('-v', '--verbose-attacks', type=int, default=1,
                         help="Sploits' outputs and found flags will be shown for the N first attacks")
 
+    parser.add_argument('--not-per-team', action='store_true',
+                        help='Run a single instance of the sploit instead of an instance per team')
+
     return parser.parse_args()
 
 
@@ -119,14 +122,6 @@ def post_flags(args, flags):
 
 POST_PERIOD = 5
 POST_FLAG_LIMIT = 10000
-
-
-def validate_args(args, config):
-    min_attack_period = config['FLAG_LIFETIME'] - config['SUBMIT_PERIOD'] - POST_PERIOD
-    if args.attack_period >= min_attack_period:
-        logging.warning("--attack-period should be < {:.1f} sec, "
-                        "otherwise the sploit will not have time "
-                        "to catch flags for each round before their expiration".format(min_attack_period))
 
 
 def once_in_a_period(period):
@@ -226,6 +221,23 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
                     flag_queue.append({'flag': item, 'team': team_name})
 
 
+def show_time_limit_info(args, config, max_runtime, attack_no):
+    if attack_no == 0:
+        min_attack_period = config['FLAG_LIFETIME'] - config['SUBMIT_PERIOD'] - POST_PERIOD
+        if args.attack_period >= min_attack_period:
+            logging.warning("--attack-period should be < {:.1f} sec, "
+                            "otherwise the sploit will not have time "
+                            "to catch flags for each round before their expiration".format(min_attack_period))
+
+    logging.info('Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
+    if total_runs == 0:
+        logging.info('If this is not enough, increase --pool-size or --attack-period. '
+                     'Percentage of the killed instances will be shown after the first attack.')
+    else:
+        run_share_killed = float(killed_runs) / total_runs
+        logging.info('{:.1f}% of instances were killed'.format(run_share_killed * 100))
+
+
 def main(args):
     try:
         check_sploit(args.sploit)
@@ -252,21 +264,19 @@ def main(args):
                 return
             logging.info('Using the old config')
 
-        if attack_no == 0:
-            validate_args(args, config)
-        max_runtime = args.attack_period / ceil(len(config['TEAMS']) / args.pool_size)
-        logging.info('Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
-        if total_runs == 0:
-            logging.info('If this is not enough, increase --pool-size or --attack-period. '
-                         'Percentage of the killed instances will be shown after the first attack.')
+        if args.not_per_team:
+            teams = {'*': '0.0.0.0'}
+            # TODO: Handle this in a more natural way?
         else:
-            run_share_killed = float(killed_runs) / total_runs
-            logging.info('{:.1f}% of instances were killed'.format(run_share_killed * 100))
+            teams = config['TEAMS']
+
+        max_runtime = args.attack_period / ceil(len(teams) / args.pool_size)
+        show_time_limit_info(args, config, max_runtime, attack_no)
 
         flag_format = re.compile(config['FLAG_FORMAT'])
 
         pool = ThreadPoolExecutor(max_workers=args.pool_size)
-        for team_name, team_addr in config['TEAMS'].items():
+        for team_name, team_addr in teams.items():
             pool.submit(run_sploit, args, team_name, team_addr, attack_no, max_runtime, flag_format)
         pool.shutdown(wait=False)
 
