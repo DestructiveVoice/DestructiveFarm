@@ -13,6 +13,8 @@ def timestamp_to_datetime(s):
 
 @app.route('/')
 def index():
+    start_time = time.time()
+
     query = 'SELECT * FROM flags'
     conditions = []
     args = []
@@ -23,14 +25,15 @@ def index():
             args.append(request.args[column])
 
     if 'last-minutes' in request.args:
-        start_time = round(time.time() - int(request.args['last-minutes']) * 60)
+        min_time = round(time.time() - int(request.args['last-minutes']) * 60)
         conditions.append('time >= ?')
-        args.append(start_time)
+        args.append(min_time)
 
     if conditions:
         query += ' WHERE ' + ' AND '.join(conditions)
     query += ' ORDER BY time DESC'
     flags = database.query(query, args)
 
+    gen_time = time.time() - start_time
     return render_template('index.html', flags=flags,
-                           has_conditions=bool(conditions))
+                           has_conditions=bool(conditions), gen_time=gen_time)
