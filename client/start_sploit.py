@@ -42,18 +42,19 @@ Note that this software is highly destructive. Keep it away from children.
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Run a sploit on all teams in a loop')
+    parser = argparse.ArgumentParser(description='Run a sploit on all teams in a loop',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument('sploit', help='Sploit executable')
     parser.add_argument('--server-url', default='http://farm.kolambda.com:5000', help='Server URL')
 
     parser.add_argument('--pool-size', type=int, default=50,
-                        help='Maximal number of concurrent sploit instances'
-                             '(too little will make time limits for sploits smaller,'
+                        help='Maximal number of concurrent sploit instances '
+                             '(too little will make time limits for sploits smaller, '
                              'too big will eat all RAM on your computer)')
     parser.add_argument('--attack-period', type=float, default=120,
-                        help='Rerun the sploit on all teams each N seconds'
-                             '(too little will make time limits for sploits smaller,'
+                        help='Rerun the sploit on all teams each N seconds '
+                             '(too little will make time limits for sploits smaller, '
                              'too big will miss flags from some rounds)')
 
     parser.add_argument('-v', '--verbose-attacks', type=int, default=1,
