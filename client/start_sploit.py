@@ -256,11 +256,12 @@ def main(args):
             validate_args(args, config)
         max_runtime = args.attack_period / ceil(len(config['TEAMS']) / args.pool_size)
         logging.info('Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
-
-        if total_runs > 0:
+        if total_runs == 0:
+            logging.info('If this is not enough, increase --pool-size or --attack-period. '
+                         'Percentage of the killed instances will be shown after the first attack.')
+        else:
             run_share_killed = float(killed_runs) / total_runs
-            logging.info('{:.1f}% of instances were killed (if this is too much, '
-                         'increase --pool-size or --attack-period)'.format(run_share_killed * 100))
+            logging.info('{:.1f}% of instances were killed'.format(run_share_killed * 100))
 
         flag_format = re.compile(config['FLAG_FORMAT'])
 
