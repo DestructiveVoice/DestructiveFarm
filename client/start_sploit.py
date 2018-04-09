@@ -177,6 +177,9 @@ display_output_lock = threading.RLock()
 def display_output(team_name, output):
     prefix = highlight(team_name + ': ')
     lines = [prefix + line for line in output.splitlines()]
+    if not lines:
+        return
+
     with display_output_lock:
         print('\n' + '\n'.join(lines) + '\n')
 
