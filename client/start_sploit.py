@@ -181,13 +181,11 @@ def display_output(team_name, output):
         print('\n' + '\n'.join(lines) + '\n')
 
 
-killed_runs = total_runs = 0
-run_counter_lock = threading.RLock()
+stats = {}
+stats_lock = threading.RLock()
 
 
 def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
-    global killed_runs, total_runs
-
     need_close_fds = (os.name != 'nt')
     proc = subprocess.Popen([os.path.abspath(args.sploit), team_addr],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -201,9 +199,9 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
         output, _ = proc.communicate()
         killed = True
 
-    with run_counter_lock:
-        killed_runs += killed
-        total_runs += 1
+    with stats_lock:
+        stats['killed_runs'] += killed
+        stats['total_runs'] += 1
 
     output = output.decode(errors='replace')
     flags = flag_format.findall(output)
@@ -231,11 +229,11 @@ def show_time_limit_info(args, config, max_runtime, attack_no):
                             "to catch flags for each round before their expiration".format(min_attack_period))
 
     logging.info('Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
-    if total_runs == 0:
+    if not ('total_runs' in stats and 'killed_runs' in stats):
         logging.info('If this is not enough, increase --pool-size or --attack-period. '
                      'Percentage of the killed instances will be shown after the first attack.')
     else:
-        run_share_killed = float(killed_runs) / total_runs
+        run_share_killed = float(stats['killed_runs']) / stats['total_runs']
         logging.info('{:.1f}% of instances were killed'.format(run_share_killed * 100))
 
 
@@ -253,12 +251,13 @@ def main(args):
     threading.Thread(target=lambda: run_post_loop(args), daemon=True).start()
     # FIXME: Don't use daemon=True, exit from the thread properly
 
-    config = None
+    config = flag_format = None
     for attack_no in once_in_a_period(args.attack_period):
         logging.info('Launching an attack #{}'.format(attack_no))
 
         try:
             config = get_config(args)
+            flag_format = re.compile(config['FLAG_FORMAT'])
         except Exception as e:
             logging.error("Can't get config from the server: {}".format(repr(e)))
             if attack_no == 0:
@@ -273,8 +272,7 @@ def main(args):
 
         max_runtime = args.attack_period / ceil(len(teams) / args.pool_size)
         show_time_limit_info(args, config, max_runtime, attack_no)
-
-        flag_format = re.compile(config['FLAG_FORMAT'])
+        stats['total_runs'] = stats['killed_runs'] = 0
 
         pool = ThreadPoolExecutor(max_workers=args.pool_size)
         for team_name, team_addr in teams.items():
