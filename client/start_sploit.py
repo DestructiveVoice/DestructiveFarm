@@ -172,7 +172,7 @@ POST_FLAG_LIMIT = 10000
 
 
 def once_in_a_period(period):
-    for iter_no in itertools.count():
+    for iter_no in itertools.count(1):
         start_time = time.time()
         yield iter_no
 
@@ -214,7 +214,7 @@ display_output_lock = threading.RLock()
 
 def display_sploit_output(team_name, output_lines):
     if not output_lines:
-        logging.info('{}: No output from sploit'.format(team_name))
+        logging.info('{}: No output from the sploit'.format(team_name))
         return
 
     prefix = highlight(team_name + ': ')
@@ -242,7 +242,7 @@ def consume_sploit_output(stream, args, team_name, flag_format, attack_no):
                         flag_queue.append({'flag': item, 'team': team_name})
                         instance_flags.append(item)
 
-    if attack_no < args.verbose_attacks and not exit_event.is_set():
+    if attack_no <= args.verbose_attacks and not exit_event.is_set():
         # We don't want to spam the terminal on KeyboardInterrupt
 
         display_sploit_output(team_name, output_lines)
@@ -290,10 +290,11 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
         need_kill = False
     except subprocess.TimeoutExpired:
         need_kill = True
+        if attack_no <= args.verbose_attacks:
+            logging.warning('Sploit for "{}" ({}) ran out of time'.format(team_name, team_addr))
 
     with sploit_instances_lock:
-        if need_kill and proc.poll() is None:
-            logging.warning('Killing sploit for "{}" ({})'.format(team_name, team_addr))
+        if need_kill:
             proc.kill()
         del sploit_instances[instance_id]
 
@@ -303,7 +304,7 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
 
 
 def show_time_limit_info(args, config, max_runtime, attack_no):
-    if attack_no == 0:
+    if attack_no == 1:
         min_attack_period = config['FLAG_LIFETIME'] - config['SUBMIT_PERIOD'] - POST_PERIOD
         if args.attack_period >= min_attack_period:
             logging.warning("--attack-period should be < {:.1f} sec, "
@@ -315,7 +316,7 @@ def show_time_limit_info(args, config, max_runtime, attack_no):
         logging.info('If this is not enough, increase --pool-size or --attack-period. '
                      'You\'ll see how many instances ran out of time after the first attack.')
     else:
-        logging.info('{:.1f}% of instances ran out of time'.format(
+        logging.info('Total {:.1f}% of instances ran out of time'.format(
             float(killed_instances) / total_instances * 100))
 
 
@@ -332,7 +333,7 @@ def get_target_teams(args, teams, distribute, attack_no):
         teams = {name: addr for name, addr in teams.items()
                  if binascii.crc32(addr.encode()) % n == k - 1}
 
-    if attack_no < args.verbose_attacks:
+    if attack_no <= args.verbose_attacks:
         names = sorted(teams.keys())
         if len(names) > PRINTED_TEAM_NAMES:
             names = names[:PRINTED_TEAM_NAMES] + ['...']
@@ -363,11 +364,12 @@ def main(args):
             flag_format = re.compile(config['FLAG_FORMAT'])
         except Exception as e:
             logging.error("Can't get config from the server: {}".format(repr(e)))
-            if attack_no == 0:
+            if attack_no == 1:
                 return
             logging.info('Using the old config')
         teams = get_target_teams(args, config['TEAMS'], distribute, attack_no)
 
+        print()
         logging.info('Launching an attack #{}'.format(attack_no))
 
         max_runtime = args.attack_period / ceil(len(teams) / args.pool_size)
