@@ -131,9 +131,9 @@ def parse_distribute_argument(value):
         match = re.fullmatch(r'(\d+)/(\d+)', value)
         if match is not None:
             k, n = (int(match.group(1)), int(match.group(2)))
-            if k >= 1 and n >= 2:
+            if n >= 2 and 1 <= k <= n:
                 return k, n
-        raise ValueError('Wrong syntax for --distribute, use --distribute=K/N (K >= 1, N >= 2)')
+        raise ValueError('Wrong syntax for --distribute, use --distribute=K/N (N >= 2, 1 <= K <= N)')
     return None
 
 
@@ -333,11 +333,15 @@ def get_target_teams(args, teams, distribute, attack_no):
         teams = {name: addr for name, addr in teams.items()
                  if binascii.crc32(addr.encode()) % n == k - 1}
 
-    if attack_no <= args.verbose_attacks:
-        names = sorted(teams.keys())
-        if len(names) > PRINTED_TEAM_NAMES:
-            names = names[:PRINTED_TEAM_NAMES] + ['...']
-        logging.info('Sploit will be run on {} teams: {}'.format(len(teams), ', '.join(names)))
+    if teams:
+        if attack_no <= args.verbose_attacks:
+            names = sorted(teams.keys())
+            if len(names) > PRINTED_TEAM_NAMES:
+                names = names[:PRINTED_TEAM_NAMES] + ['...']
+            logging.info('Sploit will be run on {} teams: {}'.format(len(teams), ', '.join(names)))
+    else:
+        logging.error('There is no teams to attack for this farm client, fix "TEAMS" value '
+                      'in your server config or the usage of --distribute')
 
     return teams
 
@@ -368,6 +372,10 @@ def main(args):
                 return
             logging.info('Using the old config')
         teams = get_target_teams(args, config['TEAMS'], distribute, attack_no)
+        if not teams:
+            if attack_no == 1:
+                return
+            continue
 
         print()
         logging.info('Launching an attack #{}'.format(attack_no))
