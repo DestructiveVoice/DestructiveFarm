@@ -232,7 +232,7 @@ def consume_sploit_output(stream, args, team_name, flag_format, attack_no):
 
     while True:
         line = stream.readline()
-        if not line or exit_event.is_set():
+        if not line:
             break
         line = line.decode(errors='replace')
         output_lines.append(line)
@@ -255,34 +255,54 @@ def consume_sploit_output(stream, args, team_name, flag_format, attack_no):
                 len(instance_flags), team_name, instance_flags))
 
 
+sploit_instance_counter = 0
+sploit_instances = {}
+sploit_instances_lock = threading.RLock()
+# Changing sploit_instance_counter, sploit_instances, and killing the instances
+# should be performed only under this lock
+
 stats = {}
 stats_lock = threading.RLock()
 
 
 def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
-    # For sploits written in Python, this env variable forces the interpreter to flush
-    # stdout and stderr after each newline. Note that this is not default behavior
-    # if the sploit's output is redirected to a pipe.
-    env = os.environ.copy()
-    env['PYTHONUNBUFFERED'] = '1'
+    global sploit_instance_counter
 
-    need_close_fds = (os.name != 'nt')
-    proc = subprocess.Popen([os.path.abspath(args.sploit), team_addr],
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            bufsize=1, close_fds=need_close_fds, env=env)
-    threading.Thread(target=lambda: consume_sploit_output(
-        proc.stdout, args, team_name, flag_format, attack_no), daemon=True).start()
+    with sploit_instances_lock:
+        if exit_event.is_set():
+            return
+
+        # For sploits written in Python, this env variable forces the interpreter to flush
+        # stdout and stderr after each newline. Note that this is not default behavior
+        # if the sploit's output is redirected to a pipe.
+        env = os.environ.copy()
+        env['PYTHONUNBUFFERED'] = '1'
+
+        need_close_fds = (os.name != 'nt')
+        proc = subprocess.Popen([os.path.abspath(args.sploit), team_addr],
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                bufsize=1, close_fds=need_close_fds, env=env)
+        threading.Thread(target=lambda: consume_sploit_output(
+            proc.stdout, args, team_name, flag_format, attack_no)).start()
+
+        instance_id = sploit_instance_counter
+        sploit_instances[sploit_instance_counter] = proc
+        sploit_instance_counter += 1
 
     try:
         proc.wait(timeout=max_runtime)
-        killed = False
+        need_kill = False
     except subprocess.TimeoutExpired:
-        logging.warning('Killing sploit for "{}" ({})'.format(team_name, team_addr))
-        proc.kill()
-        killed = True
+        need_kill = True
+
+    with sploit_instances_lock:
+        if need_kill and proc.poll() is None:
+            logging.warning('Killing sploit for "{}" ({})'.format(team_name, team_addr))
+            proc.kill()
+        del sploit_instances[instance_id]
 
     with stats_lock:
-        stats['killed_runs'] += killed
+        stats['killed_runs'] += need_kill
         stats['total_runs'] += 1
 
 
@@ -321,7 +341,7 @@ def main(args):
     print(highlight(HEADER))
     logging.info('Connecting to the farm server at {}'.format(args.server_url))
 
-    threading.Thread(target=lambda: run_post_loop(args), daemon=True).start()
+    threading.Thread(target=lambda: run_post_loop(args)).start()
 
     config = flag_format = None
     for attack_no in once_in_a_period(args.attack_period):
@@ -364,10 +384,21 @@ def main(args):
         pool.shutdown(wait=False)
 
 
+def shutdown():
+    logging.info('Got Ctrl+C, shutting down')
+
+    # Stop run_post_loop thread
+    exit_event.set()
+    # Kill all child processes (so consume_sploit_ouput and run_sploit also will stop)
+    with sploit_instances_lock:
+        for proc in sploit_instances.values():
+            proc.kill()
+
+
 if __name__ == '__main__':
     try:
         main(parse_args())
     except KeyboardInterrupt:
         pass
     finally:
-        exit_event.set()
+        shutdown()
