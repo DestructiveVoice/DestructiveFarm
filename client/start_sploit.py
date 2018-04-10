@@ -19,13 +19,6 @@ from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
 
-if os.name != 'nt':
-    log_format = '%(asctime)s \033[33m%(levelname)s\033[0m %(message)s'
-else:
-    log_format = '%(asctime)s %(levelname)s %(message)s'
-logging.basicConfig(format=log_format, datefmt='%H:%M:%S', level=logging.DEBUG)
-
-
 if sys.version_info < (3, 4):
     logging.critical('Support of Python < 3.4 is not implemented yet')
     sys.exit(1)
@@ -52,6 +45,10 @@ def highlight(text, bold=True, color=None):
     if color is None:
         color = random.choice(HIGHLIGHT_COLORS)
     return '\033[{}{}m'.format('1;' if bold else '', color) + text + '\033[0m'
+
+
+log_format = '%(asctime)s {} %(message)s'.format(highlight('%(levelname)s', bold=False, color=33))
+logging.basicConfig(format=log_format, datefmt='%H:%M:%S', level=logging.DEBUG)
 
 
 def parse_args():
