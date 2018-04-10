@@ -33,8 +33,10 @@ def get_fair_share(groups, limit):
             selected = random.sample(group, fair_share + 1)
             result += selected[:-1]
             residuals.append(selected[-1])
+    result += random.sample(residuals, min(limit - len(result), len(residuals)))
 
-    return result + random.sample(residuals, min(limit - len(result), len(residuals)))
+    random.shuffle(result)
+    return result
 
 
 def submit_flags(flags, config):
