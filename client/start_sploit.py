@@ -41,6 +41,18 @@ Note that this software is highly destructive. Keep it away from children.
 '''[1:]
 
 
+HIGHLIGHT_COLORS = [31, 32, 34, 35, 36]
+
+
+def highlight(text, bold=True, color=None):
+    if os.name == 'nt':
+        return text
+
+    if color is None:
+        color = random.choice(HIGHLIGHT_COLORS)
+    return '\033[{}{}m'.format('1;' if bold else '', color) + text + '\033[0m'
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Run a sploit on all teams in a loop',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -79,10 +91,27 @@ def check_sploit(path):
 
     is_script = os.path.splitext(path)[1].lower() in SCRIPT_EXTENSIONS
     if is_script:
-        with open(path, 'rb') as f:
-            if f.read(2) != b'#!':
-                raise InvalidSploitError(
-                    'Please use shebang (e.g. "#!/usr/bin/env python3") as a first line of your script')
+        with open(path, 'r', errors='ignore') as f:
+            script = f.read()
+
+        errors = []
+        if script[:2] != '#!':
+            errors.append(
+                'Please use shebang (e.g. {}) as the first line of your script'.format(
+                    highlight('#!/usr/bin/env python3', bold=False, color=32)))
+        if re.search(r'flush[(=]', script) is None:
+            errors.append(
+                'Please print the newline and call {} each time after your sploit outputs flags. '
+                'In Python 3, you can use {}. '
+                'Otherwise, the flags may be lost (if the sploit process is killed) or '
+                'sent with a delay.'.format(
+                    highlight('flush()', bold=False, color=31),
+                    highlight('print(..., flush=True)', bold=False, color=32)))
+
+        if errors:
+            for message in errors:
+                logging.error(message)
+            raise InvalidSploitError('The sploit won\'t be run because of validation errors')
 
     if os.name != 'nt':
         file_mode = os.stat(path).st_mode
@@ -161,16 +190,6 @@ def run_post_loop(args):
                 logging.info("The flags will be posted next time")
 
 
-HIGHLIGHT_COLORS = [31, 32, 34, 35, 36]
-
-
-def highlight(text):
-    if os.name == 'nt':
-        return text
-
-    return '\033[1;{}m'.format(random.choice(HIGHLIGHT_COLORS)) + text + '\033[0m'
-
-
 display_output_lock = threading.RLock()
 
 
@@ -217,10 +236,16 @@ stats_lock = threading.RLock()
 
 
 def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
+    # For sploits written in Python, this env variable forces the interpreter to flush
+    # stdout and stderr after each newline. Note that this is not default behavior
+    # if the sploit's output is redirected to a pipe.
+    env = os.environ.copy()
+    env['PYTHONUNBUFFERED'] = '1'
+
     need_close_fds = (os.name != 'nt')
     proc = subprocess.Popen([os.path.abspath(args.sploit), team_addr],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            bufsize=1, close_fds=need_close_fds)
+                            bufsize=1, close_fds=need_close_fds, env=env)
     threading.Thread(target=lambda: process_output_in_realtime(
         proc.stdout, args, team_name, flag_format, attack_no), daemon=True).start()
 
@@ -258,7 +283,7 @@ def main(args):
     try:
         check_sploit(args.sploit)
     except InvalidSploitError as e:
-        logging.critical(repr(e))
+        logging.critical(str(e))
         return
 
     print(highlight(HEADER))

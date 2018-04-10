@@ -11,5 +11,5 @@ print("My args are: %s" % sys.argv)
 
 print("Here are some random flags for you:")
 
-print("First flag is %031d=" % random.randrange(0, 10000))
-print("Second flag is %031d=" % random.randrange(0, 10000))
+print("First flag is %031d=" % random.randrange(0, 10000), flush=True)
+print("Second flag is %031d=" % random.randrange(0, 10000), flush=True)
