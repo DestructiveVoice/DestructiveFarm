@@ -114,7 +114,7 @@ def check_sploit(path):
         if errors:
             for message in errors:
                 logging.error(message)
-            raise InvalidSploitError('The sploit won\'t be run because of validation errors')
+            raise InvalidSploitError('Sploit won\'t be run because of validation errors')
 
     if os.name != 'nt':
         file_mode = os.stat(path).st_mode
@@ -312,10 +312,7 @@ def show_time_limit_info(args, config, max_runtime, attack_no):
                             "to catch flags for each round before their expiration".format(min_attack_period))
 
     logging.info('Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
-    if total_instances == 0:
-        logging.info('If this is not enough, increase --pool-size or --attack-period. '
-                     'You\'ll see how many instances ran out of time after the first attack.')
-    else:
+    if total_instances > 0:
         logging.info('Total {:.1f}% of instances ran out of time'.format(
             float(killed_instances) / total_instances * 100))
 
@@ -325,7 +322,6 @@ PRINTED_TEAM_NAMES = 5
 
 def get_target_teams(args, teams, distribute, attack_no):
     if args.not_per_team:
-        # TODO: Handle this in a more natural way?
         return {'*': '0.0.0.0'}
 
     if distribute is not None:
