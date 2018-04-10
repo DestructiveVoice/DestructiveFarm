@@ -10,10 +10,18 @@ CONFIG = {
     # This configures how and where to submit flags.
     # The protocol must be a module in protocols/ directory.
     # RuCTF(E) and VolgaCTF checksystems are supported out-of-the-box.
-    'SYSTEM_PROTOCOL': 'ructf',
+
+    'SYSTEM_PROTOCOL': 'ructf_tcp',
     'SYSTEM_HOST': '127.0.0.1',
     'SYSTEM_PORT': 31337,
     'SYSTEM_TIMEOUT': 5,
+
+    # 'SYSTEM_PROTOCOL': 'volgactf',
+    # 'SYSTEM_HOST': '127.0.0.1',
+
+    # 'SYSTEM_PROTOCOL': 'ructf_http',
+    # 'SYSTEM_URL': 'http://monitor.ructfe.org/flags',
+    # 'SYSTEM_TOKEN': 'your_secret_token',
 
     # The server will submit not more than SUBMIT_FLAG_LIMIT flags
     # every SUBMIT_PERIOD seconds. Flags received more than
