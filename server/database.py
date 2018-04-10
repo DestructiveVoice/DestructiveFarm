@@ -11,7 +11,7 @@ from flask import g
 from server import app
 
 
-DB_FILENAME = 'flags.sqlite'
+db_filename = os.path.join(os.path.dirname(__file__), 'flags.sqlite')
 
 
 _init_started = False
@@ -41,8 +41,8 @@ def get():
     global _init_started
 
     if 'database' not in g:
-        need_init = not os.path.exists(DB_FILENAME)
-        g.db = sqlite3.connect(DB_FILENAME)
+        need_init = not os.path.exists(db_filename)
+        g.db = sqlite3.connect(db_filename)
         g.db.row_factory = sqlite3.Row
 
         if need_init:
