@@ -212,15 +212,14 @@ def run_post_loop(args):
 display_output_lock = threading.RLock()
 
 
-def display_sploit_output(team_name, output):
-    prefix = highlight(team_name + ': ')
-    lines = [prefix + line for line in output.splitlines()]
-    if not lines:
+def display_sploit_output(team_name, output_lines):
+    if not output_lines:
         logging.info('{}: No output from sploit'.format(team_name))
         return
 
+    prefix = highlight(team_name + ': ')
     with display_output_lock:
-        print('\n' + '\n'.join(lines) + '\n')
+        print('\n' + '\n'.join(prefix + line.rstrip() for line in output_lines) + '\n')
 
 
 def consume_sploit_output(stream, args, team_name, flag_format, attack_no):
@@ -246,7 +245,7 @@ def consume_sploit_output(stream, args, team_name, flag_format, attack_no):
     if attack_no < args.verbose_attacks and not exit_event.is_set():
         # We don't want to spam the terminal on KeyboardInterrupt
 
-        display_sploit_output(team_name, ''.join(output_lines))
+        display_sploit_output(team_name, output_lines)
         if instance_flags:
             logging.info('Got {} flags from "{}": {}'.format(
                 len(instance_flags), team_name, instance_flags))
