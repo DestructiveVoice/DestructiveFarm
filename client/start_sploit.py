@@ -72,11 +72,11 @@ def parse_args():
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--not-per-team', action='store_true',
-                        help='Run a single instance of the sploit instead of an instance per team')
+                       help='Run a single instance of the sploit instead of an instance per team')
     group.add_argument('--distribute',
-                        help='Divide the team list to N parts (by address hash modulo N) '
-                             'and run the sploits only on Kth part of it (K >= 1). '
-                             'Syntax: --distribute K/N')
+                       help='Divide the team list to N parts (by address hash modulo N) '
+                            'and run the sploits only on Kth part of it (K >= 1). '
+                            'Syntax: --distribute K/N')
 
     return parser.parse_args()
 
@@ -322,15 +322,31 @@ def show_time_limit_info(args, config, max_runtime, attack_no):
 PRINTED_TEAM_NAMES = 5
 
 
+def get_target_teams(args, teams, distribute, attack_no):
+    if args.not_per_team:
+        # TODO: Handle this in a more natural way?
+        return {'*': '0.0.0.0'}
+
+    if distribute is not None:
+        k, n = distribute
+        teams = {name: addr for name, addr in teams.items()
+                 if binascii.crc32(addr.encode()) % n == k - 1}
+
+    if attack_no < args.verbose_attacks:
+        names = sorted(teams.keys())
+        if len(names) > PRINTED_TEAM_NAMES:
+            names = names[:PRINTED_TEAM_NAMES] + ['...']
+        logging.info('Sploit will be run on {} teams: {}'.format(len(teams), ', '.join(names)))
+
+    return teams
+
+
 def main(args):
     try:
-        check_sploit(args.sploit)
-    except (InvalidSploitError, ValueError) as e:
-        logging.critical(str(e))
-        return
-    try:
         distribute = parse_distribute_argument(args.distribute)
-    except ValueError as e:
+
+        check_sploit(args.sploit)
+    except (ValueError, InvalidSploitError) as e:
         logging.critical(str(e))
         return
 
@@ -351,24 +367,7 @@ def main(args):
             if attack_no == 0:
                 return
             logging.info('Using the old config')
-
-        if args.not_per_team:
-            teams = {'*': '0.0.0.0'}
-            # TODO: Handle this in a more natural way?
-        else:
-            teams = config['TEAMS']
-
-            if distribute is not None:
-                k, n = distribute
-                teams = {name: addr for name, addr in teams.items()
-                         if binascii.crc32(addr.encode()) % n == k - 1}
-
-            if attack_no < args.verbose_attacks:
-                names = sorted(teams.keys())
-                if len(names) > PRINTED_TEAM_NAMES:
-                    names = names[:PRINTED_TEAM_NAMES] + ['...']
-                logging.info('Sploit will be run on {} teams{}'.format(
-                    len(teams), ': ' + ', '.join(names)))
+        teams = get_target_teams(args, config['TEAMS'], distribute, attack_no)
 
         max_runtime = args.attack_period / ceil(len(teams) / args.pool_size)
         show_time_limit_info(args, config, max_runtime, attack_no)
