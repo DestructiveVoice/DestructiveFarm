@@ -257,12 +257,12 @@ sploit_instances_lock = threading.RLock()
 # Changing sploit_instance_counter, sploit_instances, and killing the instances
 # should be performed only under this lock
 
-stats = {}
+total_instances = killed_instances = 0
 stats_lock = threading.RLock()
 
 
 def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
-    global sploit_instance_counter
+    global sploit_instance_counter, total_instances, killed_instances
 
     with sploit_instances_lock:
         if exit_event.is_set():
@@ -298,8 +298,8 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
         del sploit_instances[instance_id]
 
     with stats_lock:
-        stats['killed_runs'] += need_kill
-        stats['total_runs'] += 1
+        total_instances += 1
+        killed_instances += need_kill
 
 
 def show_time_limit_info(args, config, max_runtime, attack_no):
@@ -311,12 +311,12 @@ def show_time_limit_info(args, config, max_runtime, attack_no):
                             "to catch flags for each round before their expiration".format(min_attack_period))
 
     logging.info('Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
-    if not (stats.get('total_runs', 0) > 0 and 'killed_runs' in stats):
+    if total_instances == 0:
         logging.info('If this is not enough, increase --pool-size or --attack-period. '
-                     'Percentage of the killed instances will be shown after the first attack.')
+                     'You\'ll see how many instances ran out of time after the first attack.')
     else:
-        run_share_killed = float(stats['killed_runs']) / stats['total_runs']
-        logging.info('{:.1f}% of instances were killed'.format(run_share_killed * 100))
+        logging.info('{:.1f}% of instances ran out of time'.format(
+            float(killed_instances) / total_instances * 100))
 
 
 PRINTED_TEAM_NAMES = 5
@@ -372,7 +372,6 @@ def main(args):
 
         max_runtime = args.attack_period / ceil(len(teams) / args.pool_size)
         show_time_limit_info(args, config, max_runtime, attack_no)
-        stats['total_runs'] = stats['killed_runs'] = 0
 
         for team_name, team_addr in teams.items():
             pool.submit(run_sploit, args, team_name, team_addr, attack_no, max_runtime, flag_format)
