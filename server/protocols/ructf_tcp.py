@@ -24,6 +24,7 @@ def submit_flags(flags, config):
     for item in flags:
         sock.sendall(item.flag.encode() + b'\n')
         response = sock.recv(4096).strip().lower().decode()
+        response = response.replace('[{}] '.format(item.flag), '')
 
         for status, substrings in RESPONSES.items():
             if any(s in response for s in substrings):

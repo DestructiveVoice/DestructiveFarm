@@ -19,7 +19,8 @@ def submit_flags(flags, config):
 
     unknown_responses = set()
     for item in r.json():
-        response = item['msg']
+        response = item['msg'].strip.lower()
+        response = response.replace('[{}] '.format(item.flag), '')
 
         for status, substrings in RESPONSES.items():
             if any(s in response for s in substrings):
