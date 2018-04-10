@@ -81,7 +81,35 @@ def parse_args():
     return parser.parse_args()
 
 
+def parse_distribute_argument(value):
+    if value is not None:
+        match = re.fullmatch(r'(\d+)/(\d+)', value)
+        if match is not None:
+            k, n = (int(match.group(1)), int(match.group(2)))
+            if n >= 2 and 1 <= k <= n:
+                return k, n
+        raise ValueError('Wrong syntax for --distribute, use --distribute=K/N (N >= 2, 1 <= K <= N)')
+    return None
+
+
 SCRIPT_EXTENSIONS = ['.pl', '.py', '.rb']
+
+
+def check_script_source(source):
+    errors = []
+    if source[:2] != '#!':
+        errors.append(
+            'Please use shebang (e.g. {}) as the first line of your script'.format(
+                highlight('#!/usr/bin/env python3', bold=False, color=32)))
+    if re.search(r'flush[(=]', source) is None:
+        errors.append(
+            'Please print the newline and call {} each time after your sploit outputs flags. '
+            'In Python 3, you can use {}. '
+            'Otherwise, the flags may be lost (if the sploit process is killed) or '
+            'sent with a delay.'.format(
+                highlight('flush()', bold=False, color=31),
+                highlight('print(..., flush=True)', bold=False, color=32)))
+    return errors
 
 
 class InvalidSploitError(Exception):
@@ -95,21 +123,8 @@ def check_sploit(path):
     is_script = os.path.splitext(path)[1].lower() in SCRIPT_EXTENSIONS
     if is_script:
         with open(path, 'r', errors='ignore') as f:
-            script = f.read()
-
-        errors = []
-        if script[:2] != '#!':
-            errors.append(
-                'Please use shebang (e.g. {}) as the first line of your script'.format(
-                    highlight('#!/usr/bin/env python3', bold=False, color=32)))
-        if re.search(r'flush[(=]', script) is None:
-            errors.append(
-                'Please print the newline and call {} each time after your sploit outputs flags. '
-                'In Python 3, you can use {}. '
-                'Otherwise, the flags may be lost (if the sploit process is killed) or '
-                'sent with a delay.'.format(
-                    highlight('flush()', bold=False, color=31),
-                    highlight('print(..., flush=True)', bold=False, color=32)))
+            source = f.read()
+        errors = check_script_source(source)
 
         if errors:
             for message in errors:
@@ -124,17 +139,6 @@ def check_sploit(path):
                 os.chmod(path, file_mode | stat.S_IXUSR)
             else:
                 raise InvalidSploitError("The provided file doesn't appear to be executable")
-
-
-def parse_distribute_argument(value):
-    if value is not None:
-        match = re.fullmatch(r'(\d+)/(\d+)', value)
-        if match is not None:
-            k, n = (int(match.group(1)), int(match.group(2)))
-            if n >= 2 and 1 <= k <= n:
-                return k, n
-        raise ValueError('Wrong syntax for --distribute, use --distribute=K/N (N >= 2, 1 <= K <= N)')
-    return None
 
 
 class APIException(Exception):
@@ -167,10 +171,6 @@ def post_flags(args, flags):
 exit_event = threading.Event()
 
 
-POST_PERIOD = 5
-POST_FLAG_LIMIT = 10000
-
-
 def once_in_a_period(period):
     for iter_no in itertools.count(1):
         start_time = time.time()
@@ -183,27 +183,58 @@ def once_in_a_period(period):
             break
 
 
-flags_seen = set()
-flag_queue = []
-flags_lock = threading.RLock()
+class FlagStorage:
+    """
+    Thread-safe storage comprised of a set and a post queue.
+
+    Any number of threads can call add(), but only one "consumer thread"
+    can call get_flags() and mark_as_sent().
+    """
+
+    def __init__(self):
+        self._flags_seen = set()
+        self._queue = []
+        self._lock = threading.RLock()
+
+    def add(self, flags, team_name):
+        with self._lock:
+            for item in flags:
+                if item not in self._flags_seen:
+                    self._flags_seen.add(item)
+                    self._queue.append({'flag': item, 'team': team_name})
+
+    def pick_flags(self, count):
+        with self._lock:
+            return self._queue[:count]
+
+    def mark_as_sent(self, count):
+        with self._lock:
+            self._queue = self._queue[count:]
+
+    @property
+    def queue_size(self):
+        with self._lock:
+            return len(self._queue)
+
+
+flag_storage = FlagStorage()
+
+
+POST_PERIOD = 5
+POST_FLAG_LIMIT = 10000
 
 
 def run_post_loop(args):
-    global flag_queue
-
     for _ in once_in_a_period(POST_PERIOD):
-        with flags_lock:
-            flags_to_post = flag_queue[:POST_FLAG_LIMIT]
+        flags_to_post = flag_storage.pick_flags(POST_FLAG_LIMIT)
 
         if flags_to_post:
             try:
                 post_flags(args, flags_to_post)
 
-                with flags_lock:
-                    flag_queue = flag_queue[len(flags_to_post):]
-
+                flag_storage.mark_as_sent(len(flags_to_post))
                 logging.info('{} flags posted to the server ({} in the queue)'.format(
-                    len(flags_to_post), len(flag_queue)))
+                    len(flags_to_post), flag_storage.queue_size))
             except Exception as e:
                 logging.error("Can't post flags to the server: {}".format(repr(e)))
                 logging.info("The flags will be posted next time")
@@ -235,12 +266,8 @@ def consume_sploit_output(stream, args, team_name, flag_format, attack_no):
 
         line_flags = flag_format.findall(line)
         if line_flags:
-            with flags_lock:
-                for item in line_flags:
-                    if item not in flags_seen:
-                        flags_seen.add(item)
-                        flag_queue.append({'flag': item, 'team': team_name})
-                        instance_flags.append(item)
+            flag_storage.add(line_flags, team_name)
+            instance_flags += line_flags
 
     if attack_no <= args.verbose_attacks and not exit_event.is_set():
         # We don't want to spam the terminal on KeyboardInterrupt
@@ -251,20 +278,40 @@ def consume_sploit_output(stream, args, team_name, flag_format, attack_no):
                 len(instance_flags), team_name, instance_flags))
 
 
-sploit_instance_counter = 0
-sploit_instances = {}
-sploit_instances_lock = threading.RLock()
-# Changing sploit_instance_counter, sploit_instances, and killing the instances
-# should be performed only under this lock
+class InstanceManager:
+    """
+    Storage comprised of a dictionary of all running sploit instances and some statistics.
 
-total_instances = killed_instances = 0
-stats_lock = threading.RLock()
+    The lock inside this class should be acquired by a class user. Any methods and fields
+    must be used only when the lock is taken by the current thread.
+    """
+
+    def __init__(self):
+        self._counter = 0
+        self.instances = {}
+        self.lock = threading.RLock()
+
+        self.n_completed = 0
+        self.n_killed = 0
+
+    def register_start(self, process):
+        instance_id = self._counter
+        self.instances[instance_id] = process
+        self._counter += 1
+        return instance_id
+
+    def register_stop(self, instance_id, was_killed):
+        del self.instances[instance_id]
+
+        self.n_completed += 1
+        self.n_killed += was_killed
+
+
+instance_manager = InstanceManager()
 
 
 def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
-    global sploit_instance_counter, total_instances, killed_instances
-
-    with sploit_instances_lock:
+    with instance_manager.lock:
         if exit_event.is_set():
             return
 
@@ -281,9 +328,7 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
         threading.Thread(target=lambda: consume_sploit_output(
             proc.stdout, args, team_name, flag_format, attack_no)).start()
 
-        instance_id = sploit_instance_counter
-        sploit_instances[sploit_instance_counter] = proc
-        sploit_instance_counter += 1
+        instance_id = instance_manager.register_start(proc)
 
     try:
         proc.wait(timeout=max_runtime)
@@ -293,14 +338,11 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
         if attack_no <= args.verbose_attacks:
             logging.warning('Sploit for "{}" ({}) ran out of time'.format(team_name, team_addr))
 
-    with sploit_instances_lock:
+    with instance_manager.lock:
         if need_kill:
             proc.kill()
-        del sploit_instances[instance_id]
 
-    with stats_lock:
-        total_instances += 1
-        killed_instances += need_kill
+        instance_manager.register_stop(instance_id, need_kill)
 
 
 def show_time_limit_info(args, config, max_runtime, attack_no):
@@ -312,9 +354,9 @@ def show_time_limit_info(args, config, max_runtime, attack_no):
                             "to catch flags for each round before their expiration".format(min_attack_period))
 
     logging.info('Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
-    if total_instances > 0:
+    if instance_manager.n_completed > 0:
         logging.info('Total {:.1f}% of instances ran out of time'.format(
-            float(killed_instances) / total_instances * 100))
+            float(instance_manager.n_killed) / instance_manager.n_completed * 100))
 
 
 PRINTED_TEAM_NAMES = 5
@@ -389,8 +431,8 @@ def shutdown():
     # Stop run_post_loop thread
     exit_event.set()
     # Kill all child processes (so consume_sploit_ouput and run_sploit also will stop)
-    with sploit_instances_lock:
-        for proc in sploit_instances.values():
+    with instance_manager.lock:
+        for proc in instance_manager.instances.values():
             proc.kill()
 
 
