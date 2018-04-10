@@ -150,6 +150,9 @@ def post_flags(args, flags):
             raise APIException(conn.read())
 
 
+exit_event = threading.Event()
+
+
 POST_PERIOD = 5
 POST_FLAG_LIMIT = 10000
 
@@ -161,7 +164,9 @@ def once_in_a_period(period):
 
         time_spent = time.time() - start_time
         if period > time_spent:
-            time.sleep(period - time_spent)
+            exit_event.wait(period - time_spent)
+        if exit_event.is_set():
+            break
 
 
 flags_seen = set()
@@ -193,24 +198,24 @@ def run_post_loop(args):
 display_output_lock = threading.RLock()
 
 
-def display_output(team_name, output):
+def display_sploit_output(team_name, output):
     prefix = highlight(team_name + ': ')
     lines = [prefix + line for line in output.splitlines()]
     if not lines:
-        logging.info('{}: No output'.format(team_name))
+        logging.info('{}: No output from sploit'.format(team_name))
         return
 
     with display_output_lock:
         print('\n' + '\n'.join(lines) + '\n')
 
 
-def process_output_in_realtime(stream, args, team_name, flag_format, attack_no):
+def consume_sploit_output(stream, args, team_name, flag_format, attack_no):
     output_lines = []
     instance_flags = []
 
     while True:
         line = stream.readline()
-        if not line:
+        if not line or exit_event.is_set():
             break
         line = line.decode(errors='replace')
         output_lines.append(line)
@@ -225,7 +230,7 @@ def process_output_in_realtime(stream, args, team_name, flag_format, attack_no):
                         instance_flags.append(item)
 
     if attack_no < args.verbose_attacks:
-        display_output(team_name, ''.join(output_lines))
+        display_sploit_output(team_name, ''.join(output_lines))
         if instance_flags:
             logging.info('Got {} flags from "{}": {}'.format(
                 len(instance_flags), team_name, instance_flags))
@@ -246,14 +251,14 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
     proc = subprocess.Popen([os.path.abspath(args.sploit), team_addr],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             bufsize=1, close_fds=need_close_fds, env=env)
-    threading.Thread(target=lambda: process_output_in_realtime(
+    threading.Thread(target=lambda: consume_sploit_output(
         proc.stdout, args, team_name, flag_format, attack_no), daemon=True).start()
 
     try:
         proc.wait(timeout=max_runtime)
         killed = False
     except subprocess.TimeoutExpired:
-        logging.warning('Killing sploit for "{}": {}'.format(team_name, team_addr))
+        logging.warning('Killing sploit for "{}" ({})'.format(team_name, team_addr))
         proc.kill()
         killed = True
 
@@ -291,7 +296,6 @@ def main(args):
     logging.info('Connecting to the farm server at {}'.format(args.server_url))
 
     threading.Thread(target=lambda: run_post_loop(args), daemon=True).start()
-    # FIXME: Don't use daemon=True, exit from the thread properly
 
     config = flag_format = None
     for attack_no in once_in_a_period(args.attack_period):
@@ -311,6 +315,8 @@ def main(args):
             # TODO: Handle this in a more natural way?
         else:
             teams = config['TEAMS']
+            if attack_no < args.verbose_attacks:
+                logging.info('Sploit will be run on {} teams'.format(len(teams)))
 
         max_runtime = args.attack_period / ceil(len(teams) / args.pool_size)
         show_time_limit_info(args, config, max_runtime, attack_no)
@@ -327,3 +333,5 @@ if __name__ == '__main__':
         main(parse_args())
     except KeyboardInterrupt:
         pass
+    finally:
+        exit_event.set()

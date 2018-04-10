@@ -25,7 +25,7 @@ def main():
 
     for _ in range(10):
         text = hashlib.sha256(text.encode()).hexdigest()[:31] + '='
-        print(text)
+        print(text, flush=True)
         time.sleep(0.1)
 
 
