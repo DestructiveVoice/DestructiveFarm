@@ -356,9 +356,8 @@ def main(args):
     threading.Thread(target=lambda: run_post_loop(args)).start()
 
     config = flag_format = None
+    pool = ThreadPoolExecutor(max_workers=args.pool_size)
     for attack_no in once_in_a_period(args.attack_period):
-        logging.info('Launching an attack #{}'.format(attack_no))
-
         try:
             config = get_config(args)
             flag_format = re.compile(config['FLAG_FORMAT'])
@@ -369,14 +368,14 @@ def main(args):
             logging.info('Using the old config')
         teams = get_target_teams(args, config['TEAMS'], distribute, attack_no)
 
+        logging.info('Launching an attack #{}'.format(attack_no))
+
         max_runtime = args.attack_period / ceil(len(teams) / args.pool_size)
         show_time_limit_info(args, config, max_runtime, attack_no)
         stats['total_runs'] = stats['killed_runs'] = 0
 
-        pool = ThreadPoolExecutor(max_workers=args.pool_size)
         for team_name, team_addr in teams.items():
             pool.submit(run_sploit, args, team_name, team_addr, attack_no, max_runtime, flag_format)
-        pool.shutdown(wait=False)
 
 
 def shutdown():
