@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import binascii
 import itertools
 import json
 import logging
@@ -72,8 +73,13 @@ def parse_args():
     parser.add_argument('-v', '--verbose-attacks', type=int, default=1,
                         help="Sploits' outputs and found flags will be shown for the N first attacks")
 
-    parser.add_argument('--not-per-team', action='store_true',
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--not-per-team', action='store_true',
                         help='Run a single instance of the sploit instead of an instance per team')
+    group.add_argument('--distribute',
+                        help='Divide the team list to N parts (by address hash modulo N) '
+                             'and run the sploits only on Kth part of it (K >= 1). '
+                             'Syntax: --distribute K/N')
 
     return parser.parse_args()
 
@@ -121,6 +127,17 @@ def check_sploit(path):
                 os.chmod(path, file_mode | stat.S_IXUSR)
             else:
                 raise InvalidSploitError("The provided file doesn't appear to be executable")
+
+
+def parse_distribute_argument(value):
+    if value is not None:
+        match = re.fullmatch(r'(\d+)/(\d+)', value)
+        if match is not None:
+            k, n = (int(match.group(1)), int(match.group(2)))
+            if k >= 1 and n >= 2:
+                return k, n
+        raise ValueError('Wrong syntax for --distribute, use --distribute=K/N (K >= 1, N >= 2)')
+    return None
 
 
 class APIException(Exception):
@@ -229,7 +246,9 @@ def consume_sploit_output(stream, args, team_name, flag_format, attack_no):
                         flag_queue.append({'flag': item, 'team': team_name})
                         instance_flags.append(item)
 
-    if attack_no < args.verbose_attacks:
+    if attack_no < args.verbose_attacks and not exit_event.is_set():
+        # We don't want to spam the terminal on KeyboardInterrupt
+
         display_sploit_output(team_name, ''.join(output_lines))
         if instance_flags:
             logging.info('Got {} flags from "{}": {}'.format(
@@ -284,15 +303,22 @@ def show_time_limit_info(args, config, max_runtime, attack_no):
         logging.info('{:.1f}% of instances were killed'.format(run_share_killed * 100))
 
 
+PRINTED_TEAM_NAMES = 5
+
+
 def main(args):
     try:
         check_sploit(args.sploit)
-    except InvalidSploitError as e:
+    except (InvalidSploitError, ValueError) as e:
+        logging.critical(str(e))
+        return
+    try:
+        distribute = parse_distribute_argument(args.distribute)
+    except ValueError as e:
         logging.critical(str(e))
         return
 
     print(highlight(HEADER))
-
     logging.info('Connecting to the farm server at {}'.format(args.server_url))
 
     threading.Thread(target=lambda: run_post_loop(args), daemon=True).start()
@@ -315,8 +341,18 @@ def main(args):
             # TODO: Handle this in a more natural way?
         else:
             teams = config['TEAMS']
+
+            if distribute is not None:
+                k, n = distribute
+                teams = {name: addr for name, addr in teams.items()
+                         if binascii.crc32(addr.encode()) % n == k - 1}
+
             if attack_no < args.verbose_attacks:
-                logging.info('Sploit will be run on {} teams'.format(len(teams)))
+                names = sorted(teams.keys())
+                if len(names) > PRINTED_TEAM_NAMES:
+                    names = names[:PRINTED_TEAM_NAMES] + ['...']
+                logging.info('Sploit will be run on {} teams{}'.format(
+                    len(teams), ': ' + ', '.join(names)))
 
         max_runtime = args.attack_period / ceil(len(teams) / args.pool_size)
         show_time_limit_info(args, config, max_runtime, attack_no)
