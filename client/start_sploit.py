@@ -178,10 +178,38 @@ def display_output(team_name, output):
     prefix = highlight(team_name + ': ')
     lines = [prefix + line for line in output.splitlines()]
     if not lines:
+        logging.info('{}: No output'.format(team_name))
         return
 
     with display_output_lock:
         print('\n' + '\n'.join(lines) + '\n')
+
+
+def process_output_in_realtime(stream, args, team_name, flag_format, attack_no):
+    output_lines = []
+    instance_flags = []
+
+    while True:
+        line = stream.readline()
+        if not line:
+            break
+        line = line.decode(errors='replace')
+        output_lines.append(line)
+
+        line_flags = flag_format.findall(line)
+        if line_flags:
+            with flags_lock:
+                for item in line_flags:
+                    if item not in flags_seen:
+                        flags_seen.add(item)
+                        flag_queue.append({'flag': item, 'team': team_name})
+                        instance_flags.append(item)
+
+    if attack_no < args.verbose_attacks:
+        display_output(team_name, ''.join(output_lines))
+        if instance_flags:
+            logging.info('Got {} flags from "{}": {}'.format(
+                len(instance_flags), team_name, instance_flags))
 
 
 stats = {}
@@ -193,34 +221,20 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
     proc = subprocess.Popen([os.path.abspath(args.sploit), team_addr],
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             bufsize=1, close_fds=need_close_fds)
+    threading.Thread(target=lambda: process_output_in_realtime(
+        proc.stdout, args, team_name, flag_format, attack_no), daemon=True).start()
+
     try:
-        output, _ = proc.communicate(timeout=max_runtime)
+        proc.wait(timeout=max_runtime)
         killed = False
     except subprocess.TimeoutExpired:
         logging.warning('Killing sploit for "{}": {}'.format(team_name, team_addr))
         proc.kill()
-        output, _ = proc.communicate()
         killed = True
 
     with stats_lock:
         stats['killed_runs'] += killed
         stats['total_runs'] += 1
-
-    output = output.decode(errors='replace')
-    flags = flag_format.findall(output)
-    # TODO: Get flags from the output in the real-time
-
-    if attack_no < args.verbose_attacks:
-        display_output(team_name, output)
-        if flags:
-            logging.debug('Got {} flags from "{}": {}'.format(len(flags), team_name, flags))
-
-    if flags:
-        with flags_lock:
-            for item in flags:
-                if item not in flags_seen:
-                    flags_seen.add(item)
-                    flag_queue.append({'flag': item, 'team': team_name})
 
 
 def show_time_limit_info(args, config, max_runtime, attack_no):
@@ -232,7 +246,7 @@ def show_time_limit_info(args, config, max_runtime, attack_no):
                             "to catch flags for each round before their expiration".format(min_attack_period))
 
     logging.info('Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
-    if not ('total_runs' in stats and 'killed_runs' in stats):
+    if not (stats.get('total_runs', 0) > 0 and 'killed_runs' in stats):
         logging.info('If this is not enough, increase --pool-size or --attack-period. '
                      'Percentage of the killed instances will be shown after the first attack.')
     else:
