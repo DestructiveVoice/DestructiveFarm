@@ -41,28 +41,39 @@ def show_flags():
         value = request.form[column]
         if value:
             conditions.append(('{} = ?'.format(column), value))
-    for column in ['flag', 'checksystem-response']:
+    for column in ['flag', 'checksystem_response']:
         value = request.form[column]
         if value:
             conditions.append(('INSTR(LOWER({}), ?)'.format(column), value))
     for param in ['time-since', 'time-until']:
-        value = request.form['time-since'].strip()
+        value = request.form[param].strip()
         if value:
             timestamp = round(datetime.strptime(value, FORM_DATETIME_FORMAT).timestamp())
-            conditions.append(('time >= ?' if param == 'time-since' else 'time-until <= ?', timestamp))
+            sign = '>=' if param == 'time-since' else '<='
+            conditions.append(('time {} ?'.format(sign), timestamp))
     page_number = int(request.form['page-number'])
     if page_number < 1:
         raise ValueError('Invalid page-number')
 
-    sql = 'SELECT * FROM flags'
-    args = []
     if conditions:
-        chunks, values = list(zip(conditions))
-        sql += ' WHERE ' + ' AND '.join(chunks)
-        args += values
-    sql += ' ORDER BY time DESC LIMIT ? OFFSET ?'
-    args += [FLAGS_PER_PAGE, FLAGS_PER_PAGE * (page_number - 1)]
+        chunks, values = list(zip(*conditions))
+        conditions_sql = 'WHERE ' + ' AND '.join(chunks)
+        conditions_args = list(values)
+    else:
+        conditions_sql = ''
+        conditions_args = []
 
+    sql = 'SELECT * FROM flags ' + conditions_sql + ' ORDER BY time DESC LIMIT ? OFFSET ?'
+    args = conditions_args + [FLAGS_PER_PAGE, FLAGS_PER_PAGE * (page_number - 1)]
     flags = database.query(sql, args)
 
-    return jsonify([dict(item) for item in flags])
+    sql = 'SELECT COUNT(*) FROM flags ' + conditions_sql
+    args = conditions_args
+    total_count = database.query(sql, args)[0][0]
+
+    return jsonify({
+        'rows': [dict(item) for item in flags],
+
+        'rows_per_page': FLAGS_PER_PAGE,
+        'total_count': total_count,
+    })

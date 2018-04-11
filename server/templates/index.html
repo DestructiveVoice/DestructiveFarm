@@ -21,12 +21,12 @@
 </nav>
 
 <div class="container mt-4">
-    <div class="row mb-5">
+    <div class="row mb-4">
         <div class="col-lg-8">
             <div class="card border-light">
                 <div class="card-body">
                     <h4 class="card-title">Show Flags</h4>
-                    <form action="/ui/show_flags" method="post">
+                    <form action="/ui/show_flags" method="post" id="show-flags-form">
                         <div class="row mb-2">
                             <div class="col-md-4">
                                 <label for="sploit-select">Sploit</label>
@@ -87,7 +87,7 @@
                                     Checksystem response
                                 </label>
                                 <input type="text" class="form-control form-control-sm" id="checksystem-response-input"
-                                       name="checksystem-response">
+                                       name="checksystem_response">
                             </div>
                         </div>
                         <div class="row">
@@ -118,11 +118,13 @@
         </div>
     </div>
 
-    <div class="mb-3 text-center query-status">
-        Loading...
-    </div>
+    <div class="mb-3 text-center query-status"></div>
 
-    <div class="search-results">
+    <div class="search-results" style="display: none;">
+        <p>Found <span class="total-count"></span> flags</p>
+
+        <ul class="pagination pagination-sm"></ul>
+
         <table class="table table-hover">
             <thead>
             <tr class="table-secondary">
@@ -134,67 +136,15 @@
                 <th scope="col">Checksystem Response</th>
             </tr>
             </thead>
-            <tbody>
-            <tr>
-                <td>spl_example.py</td>
-                <td>Bushwhackers</td>
-                <td>JDISJDSIJDSIJDSI=</td>
-                <td>Column content</td>
-                <td>REJECTED</td>
-                <td>eto kek</td>
-            </tr>
-            <tr class="table-light">
-                <td>Default</td>
-                <td>Column content</td>
-                <td>Column content</td>
-                <td>Column content</td>
-            </tr>
-            <tr>
-                <td>Default</td>
-                <td>Column content</td>
-                <td>Column content</td>
-                <td>Column content</td>
-            </tr>
-            <tr class="table-light">
-                <td>Default</td>
-                <td>Column content</td>
-                <td>Column content</td>
-                <td>Column content</td>
-            </tr>
-            <tr>
-                <td>Default</td>
-                <td>Column content</td>
-                <td>Column content</td>
-                <td>Column content</td>
-            </tr>
-            </tbody>
+            <tbody></tbody>
         </table>
 
-        <ul class="pagination pagination-sm">
-            <li class="page-item disabled">
-                <a class="page-link" href="#">«</a>
-            </li>
-            <li class="page-item active">
-                <a class="page-link" href="#">1</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="#">2</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="#">3</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="#">4</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="#">5</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="#">»</a>
-            </li>
-        </ul>
+        <ul class="pagination pagination-sm"></ul>
     </div>
 </div>
+
+<script src="/static/js/jquery.min.js"></script>
+<script src="/static/js/ui.js"></script>
 
 </body>
 </html>
