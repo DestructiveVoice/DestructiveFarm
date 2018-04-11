@@ -1,0 +1,24 @@
+@import url("https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,300,700");
+
+.navbar-brand {
+    font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 19px;
+    font-weight: 300;
+    padding: 15px 15px;
+}
+
+.logo {
+    height: 30px;
+}
+
+.table td {
+    padding: 0.65rem 0.75rem;
+}
+
+textarea {
+    resize: none;
+}
+
+#text-with-flags {
+    height: 80px;
+}

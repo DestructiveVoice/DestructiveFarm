@@ -1,57 +1,200 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Farm Server</title>
-    <style>
-        table {
-            border-collapse: collapse;
-        }
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="/static/favicon.png">
 
-        th, td {
-            border: 1px solid black;
-            padding: 5px;
-        }
-    </style>
+    <title>Destructive Farm - Server</title>
+
+    <link href="/static/css/bootswatch-flatly.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
 </head>
+
 <body>
-    <h1>Destructive Farm Server</h1>
 
-    <p>
-        Showing only the last {{ limit }} flags (want <a href="/?limit=1000">1000</a>?).
-        The page generated for {{ '{:.0f}'.format(gen_time * 1000) }} ms.
-    </p>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark py-0">
+    <img class="logo" src="/static/img/dvteam_white.png">
+    <div class="navbar-brand">Destructive Farm</div>
+</nav>
 
-    <p>
-        Last <a href="/?last-minutes=2">2</a>, <a href="/?last-minutes=5">5</a>,
-        <a href="/?last-minutes=10">10</a> minutes.
-    </p>
+<div class="container mt-4">
+    <div class="row mb-5">
+        <div class="col-lg-8">
+            <div class="card border-light">
+                <div class="card-body">
+                    <h4 class="card-title">Show Flags</h4>
+                    <form action="/ui/show_flags" method="post">
+                        <div class="row mb-2">
+                            <div class="col-md-4">
+                                <label for="sploit-select">Sploit</label>
+                                <select class="form-control form-control-sm" id="sploit-select" name="sploit">
+                                    <option value="">All</option>
+                                    {% for item in distinct_values['sploit'] %}
+                                    <option>{{ item }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="team-select">Team</label>
+                                <select class="form-control form-control-sm" id="team-select" name="team">
+                                    <option value="">All</option>
+                                    {% for item in distinct_values['team'] %}
+                                    <option>{{ item }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="flag-input">
+                                    Flag
+                                    <small class="text-muted ml-2">substring, case-insensitive</small>
+                                </label>
+                                <input type="text" class="form-control form-control-sm" id="flag-input" name="flag">
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label for="time-since-input">
+                                    Since
+                                    <small class="text-muted ml-2">{{ server_tz_name }}</small>
+                                </label>
+                                <input type="text" class="form-control form-control-sm" id="time-since-input"
+                                       name="time-since"
+                                       placeholder="yyyy-mm-dd hh:mm">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="time-until-input">
+                                    Until
+                                    <small class="text-muted ml-2">{{ server_tz_name }}</small>
+                                </label>
+                                <input type="text" class="form-control form-control-sm" id="time-until-input"
+                                       name="time-until"
+                                       placeholder="yyyy-mm-dd hh:mm">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="status-select">Status</label>
+                                <select class="form-control form-control-sm" id="status-select" name="status">
+                                    <option value="">All</option>
+                                    {% for item in distinct_values['status'] %}
+                                    <option>{{ item }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="checksystem-response-input">
+                                    Checksystem response
+                                </label>
+                                <input type="text" class="form-control form-control-sm" id="checksystem-response-input"
+                                       name="checksystem-response">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary btn-sm submit-btn">Show</button>
+                            </div>
+                        </div>
+                        <input type="hidden" value="1" id="page-number" name="page-number">
+                    </form>
+                </div>
+            </div>
+        </div>
 
-    {% if has_conditions %}
-    <p>
-        <a href="/">Reset filters</a>
-    </p>
-    {% endif %}
+        <div class="col-lg-4">
+            <div class="card border-light">
+                <div class="card-body">
+                    <h4 class="card-title">Add Flags Manually</h4>
+                    <form>
+                        <label for="text-with-flags">
+                            Text with flags
+                            <small class="text-muted ml-2">flag format: {{ flag_format }}</small>
+                        </label>
+                        <textarea class="form-control form-control-sm mb-3" id="text-with-flags" name="text"></textarea>
+                        <button type="submit" class="btn btn-primary btn-sm">Send</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <table>
-        <tr>
-            <th>Flag</th>
-            <th>Sploit</th>
-            <th>Team</th>
-            <th>Time</th>
-            <th>Status</th>
-            <th>Checksystem Response</th>
-        </tr>
+    <div class="mb-3 text-center query-status">
+        Loading...
+    </div>
 
-    {% for item in flags %}
-        <tr>
-            <td>{{ item.flag }}</td>
-            <td><a href="/?sploit={{ item.sploit }}">{{ item.sploit }}</a></td>
-            <td><a href="/?team={{ item.team }}">{{ item.team }}</a></td>
-            <td>{{ (item.time|timestamp_to_datetime).strftime('%H:%M:%S') }}</td>
-            <td><a href="/?status={{ item.status }}">{{ item.status }}</a></td>
-            <td>{{ item.checksystem_response }}</td>
-        </tr>
-    {% endfor %}
-    </table>
+    <div class="search-results">
+        <table class="table table-hover">
+            <thead>
+            <tr class="table-secondary">
+                <th scope="col">Sploit</th>
+                <th scope="col">Team</th>
+                <th scope="col">Flag</th>
+                <th scope="col">Time</th>
+                <th scope="col">Status</th>
+                <th scope="col">Checksystem Response</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>spl_example.py</td>
+                <td>Bushwhackers</td>
+                <td>JDISJDSIJDSIJDSI=</td>
+                <td>Column content</td>
+                <td>REJECTED</td>
+                <td>eto kek</td>
+            </tr>
+            <tr class="table-light">
+                <td>Default</td>
+                <td>Column content</td>
+                <td>Column content</td>
+                <td>Column content</td>
+            </tr>
+            <tr>
+                <td>Default</td>
+                <td>Column content</td>
+                <td>Column content</td>
+                <td>Column content</td>
+            </tr>
+            <tr class="table-light">
+                <td>Default</td>
+                <td>Column content</td>
+                <td>Column content</td>
+                <td>Column content</td>
+            </tr>
+            <tr>
+                <td>Default</td>
+                <td>Column content</td>
+                <td>Column content</td>
+                <td>Column content</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <ul class="pagination pagination-sm">
+            <li class="page-item disabled">
+                <a class="page-link" href="#">«</a>
+            </li>
+            <li class="page-item active">
+                <a class="page-link" href="#">1</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="#">2</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="#">3</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="#">4</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="#">5</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="#">»</a>
+            </li>
+        </ul>
+    </div>
+</div>
+
 </body>
 </html>
