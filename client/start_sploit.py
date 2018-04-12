@@ -255,7 +255,7 @@ def display_sploit_output(team_name, output_lines):
 
 def consume_sploit_output(stream, args, team_name, flag_format, attack_no):
     output_lines = []
-    instance_flags = []
+    instance_flags = set()
 
     while True:
         line = stream.readline()
@@ -264,10 +264,10 @@ def consume_sploit_output(stream, args, team_name, flag_format, attack_no):
         line = line.decode(errors='replace')
         output_lines.append(line)
 
-        line_flags = flag_format.findall(line)
+        line_flags = set(flag_format.findall(line))
         if line_flags:
             flag_storage.add(line_flags, team_name)
-            instance_flags += line_flags
+            instance_flags |= line_flags
 
     if attack_no <= args.verbose_attacks and not exit_event.is_set():
         # We don't want to spam the terminal on KeyboardInterrupt
