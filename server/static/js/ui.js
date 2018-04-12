@@ -19,8 +19,10 @@ function escapeHtml(text) {
 function generateFlagTableRows(rows) {
     var html = '';
     rows.forEach(function (item) {
+        var response = item.checksystem_response;
         var cells = [item.sploit, item.team, item.flag,
-            dateToString(new Date(item.time * 1000)), item.status, item.checksystem_response];
+            dateToString(new Date(item.time * 1000)), item.status,
+            response !== null ? response : ''];
 
         html += '<tr>';
         cells.forEach(function (text) {
