@@ -5,29 +5,55 @@ from server.models import FlagStatus, SubmitResult
 
 
 RESPONSES = {
-    FlagStatus.QUEUED: ['timeout', 'game not started', 'try again later', 'game over'],
+    FlagStatus.QUEUED: ['timeout', 'game not started', 'try again later', 'game over', 'is not up'],
     FlagStatus.ACCEPTED: ['accepted', 'congrat'],
     FlagStatus.REJECTED: ['bad', 'wrong', 'expired', 'unknown', 'your own', 'no such flag',
                           'too old', 'not in database', 'already submitted', 'invalid flag'],
 }
 
 
+READ_TIMEOUT = 5
+APPEND_TIMEOUT = 0.1
+BUFSIZE = 4096
+
+
+def recvall(sock):
+    chunks = [sock.recv(BUFSIZE)]
+
+    sock.settimeout(APPEND_TIMEOUT)
+    while True:
+        try:
+            chunk = sock.recv(BUFSIZE)
+            if not chunk:
+                break
+
+            chunks.append(chunk)
+        except socket.timeout:
+            break
+
+    sock.settimeout(READ_TIMEOUT)
+    return b''.join(chunks)
+
+
 def submit_flags(flags, config):
     sock = socket.create_connection((config['SYSTEM_HOST'], config['SYSTEM_PORT']),
-                                    config['SYSTEM_TIMEOUT'])
+                                    READ_TIMEOUT)
 
-    greeting = sock.recv(4096)
+    greeting = recvall(sock)
     if b'Enter your flags' not in greeting:
-        raise Exception('Checksystem does not greet us')
+        raise Exception('Checksystem does not greet us: {}'.format(greeting))
 
     unknown_responses = set()
     for item in flags:
         sock.sendall(item.flag.encode() + b'\n')
-        response = sock.recv(4096).strip().lower().decode()
+        response = recvall(sock).decode().strip()
+        if response:
+            response = response.splitlines()[0]
         response = response.replace('[{}] '.format(item.flag), '')
 
+        response_lower = response.lower()
         for status, substrings in RESPONSES.items():
-            if any(s in response for s in substrings):
+            if any(s in response_lower for s in substrings):
                 found_status = status
                 break
         else:

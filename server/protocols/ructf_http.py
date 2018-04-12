@@ -5,17 +5,20 @@ from server.models import FlagStatus, SubmitResult
 
 
 RESPONSES = {
-    FlagStatus.QUEUED: ['timeout', 'game not started', 'try again later', 'game over'],
+    FlagStatus.QUEUED: ['timeout', 'game not started', 'try again later', 'game over', 'is not up'],
     FlagStatus.ACCEPTED: ['accepted', 'congrat'],
     FlagStatus.REJECTED: ['bad', 'wrong', 'expired', 'unknown', 'your own', 'no such flag',
                           'too old', 'not in database', 'already submitted', 'invalid flag'],
 }
 
 
+TIMEOUT = 5
+
+
 def submit_flags(flags, config):
     r = requests.put(config['SYSTEM_URL'],
                      headers={'X-Team-Token': config['SYSTEM_TOKEN']},
-                     json=[item.flag.encode() for item in flags], timeout=5)
+                     json=[item.flag.encode() for item in flags], timeout=TIMEOUT)
 
     unknown_responses = set()
     for item in r.json():
