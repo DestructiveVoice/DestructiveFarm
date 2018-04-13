@@ -8,7 +8,9 @@ from server.models import FlagStatus
 
 @app.route('/api/get_config')
 def get_config():
-    return jsonify(reloader.get_config())
+    config = reloader.get_config()
+    return jsonify({key: value for key, value in config.items()
+                    if 'PASSWORD' not in key})
 
 
 @app.route('/api/post_flags', methods=['POST'])

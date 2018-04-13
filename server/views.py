@@ -1,9 +1,11 @@
+import re
 import time
 from datetime import datetime
 
 from flask import jsonify, render_template, request
 
 from server import app, auth, database, reloader
+from server.models import FlagStatus
 
 
 @app.template_filter('timestamp_to_datetime')
@@ -79,3 +81,21 @@ def show_flags():
         'rows_per_page': FLAGS_PER_PAGE,
         'total_count': total_count,
     })
+
+
+@app.route('/ui/post_flags_manual', methods=['POST'])
+@auth.auth_required
+def post_flags_manual():
+    config = reloader.get_config()
+    flags = re.findall(config['FLAG_FORMAT'], request.form['text'])
+
+    cur_time = round(time.time())
+    rows = [(item, 'Manual', '*', cur_time, FlagStatus.QUEUED.name)
+            for item in flags]
+
+    db = database.get()
+    db.executemany("INSERT OR IGNORE INTO flags (flag, sploit, team, time, status) "
+                   "VALUES (?, ?, ?, ?, ?)", rows)
+    db.commit()
+
+    return ''

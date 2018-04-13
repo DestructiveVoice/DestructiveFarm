@@ -26,7 +26,7 @@
             <div class="card border-light">
                 <div class="card-body">
                     <h4 class="card-title">Show Flags</h4>
-                    <form action="/ui/show_flags" method="post" id="show-flags-form">
+                    <form id="show-flags-form">
                         <div class="row mb-2">
                             <div class="col-md-4">
                                 <label for="sploit-select">Sploit</label>
@@ -105,7 +105,7 @@
             <div class="card border-light">
                 <div class="card-body">
                     <h4 class="card-title">Add Flags Manually</h4>
-                    <form>
+                    <form id="post-flags-manual-form">
                         <label for="text-with-flags">
                             Text with flags
                             <small class="text-muted ml-2">flag format: {{ flag_format }}</small>

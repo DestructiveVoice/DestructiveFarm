@@ -19,10 +19,14 @@ function escapeHtml(text) {
 function generateFlagTableRows(rows) {
     var html = '';
     rows.forEach(function (item) {
-        var response = item.checksystem_response;
-        var cells = [item.sploit, item.team, item.flag,
-            dateToString(new Date(item.time * 1000)), item.status,
-            response !== null ? response : ''];
+        var cells = [
+            item.sploit,
+            item.team !== null ? item.team : '',
+            item.flag,
+            dateToString(new Date(item.time * 1000)),
+            item.status,
+            item.checksystem_response !== null ? item.checksystem_response : ''
+        ];
 
         html += '<tr>';
         cells.forEach(function (text) {
@@ -99,6 +103,30 @@ function showFlags() {
         });
 }
 
+function postFlagsManual() {
+    if (queryInProgress)
+        return;
+    queryInProgress = true;
+
+    $.post('/ui/post_flags_manual', $('#post-flags-manual-form').serialize())
+        .done(function () {
+            var sploitSelect = $('#sploit-select');
+            if ($('#sploit-manual-option').empty())
+                sploitSelect.append($('<option id="sploit-manual-option">Manual</option>'));
+            sploitSelect.val('Manual');
+
+            $('#team-select, #flag-input, #time-since-input, #time-until-input, ' +
+              '#status-select, #checksystem-response-input').val('');
+
+            queryInProgress = false;
+            showFlags();
+        })
+        .fail(function () {
+            $('.query-status').html("Failed to post flags to the farm server");
+            queryInProgress = false;
+        });
+}
+
 $(function () {
     showFlags();
 
@@ -107,5 +135,10 @@ $(function () {
 
         setPageNumber(1);
         showFlags();
+    });
+    $('#post-flags-manual-form').submit(function (event) {
+        event.preventDefault();
+
+        postFlagsManual();
     });
 });
