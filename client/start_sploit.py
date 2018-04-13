@@ -339,6 +339,10 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
             instance_id = instance_manager.register_start(proc)
     except Exception as e:
         logging.error('Failed to run sploit: {}'.format(repr(e)))
+        if isinstance(e, FileNotFoundError):
+            logging.error('Check your shebang (use {} for compatibility) and presence of the sploit file'.format(
+                highlight('#!/usr/bin/env ...', bold=False, color=32)))
+
         if attack_no == 1:
             shutdown()
         return
