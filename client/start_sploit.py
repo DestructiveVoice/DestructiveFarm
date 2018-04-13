@@ -225,19 +225,23 @@ POST_FLAG_LIMIT = 10000
 
 
 def run_post_loop(args):
-    for _ in once_in_a_period(POST_PERIOD):
-        flags_to_post = flag_storage.pick_flags(POST_FLAG_LIMIT)
+    try:
+        for _ in once_in_a_period(POST_PERIOD):
+            flags_to_post = flag_storage.pick_flags(POST_FLAG_LIMIT)
 
-        if flags_to_post:
-            try:
-                post_flags(args, flags_to_post)
+            if flags_to_post:
+                try:
+                    post_flags(args, flags_to_post)
 
-                flag_storage.mark_as_sent(len(flags_to_post))
-                logging.info('{} flags posted to the server ({} in the queue)'.format(
-                    len(flags_to_post), flag_storage.queue_size))
-            except Exception as e:
-                logging.error("Can't post flags to the server: {}".format(repr(e)))
-                logging.info("The flags will be posted next time")
+                    flag_storage.mark_as_sent(len(flags_to_post))
+                    logging.info('{} flags posted to the server ({} in the queue)'.format(
+                        len(flags_to_post), flag_storage.queue_size))
+                except Exception as e:
+                    logging.error("Can't post flags to the server: {}".format(repr(e)))
+                    logging.info("The flags will be posted next time")
+    except Exception as e:
+        logging.critical('Posting loop died: {}'.format(repr(e)))
+        shutdown()
 
 
 display_output_lock = threading.RLock()
@@ -253,29 +257,32 @@ def display_sploit_output(team_name, output_lines):
         print('\n' + '\n'.join(prefix + line.rstrip() for line in output_lines) + '\n')
 
 
-def consume_sploit_output(stream, args, team_name, flag_format, attack_no):
-    output_lines = []
-    instance_flags = set()
+def process_sploit_output(stream, args, team_name, flag_format, attack_no):
+    try:
+        output_lines = []
+        instance_flags = set()
 
-    while True:
-        line = stream.readline()
-        if not line:
-            break
-        line = line.decode(errors='replace')
-        output_lines.append(line)
+        while True:
+            line = stream.readline()
+            if not line:
+                break
+            line = line.decode(errors='replace')
+            output_lines.append(line)
 
-        line_flags = set(flag_format.findall(line))
-        if line_flags:
-            flag_storage.add(line_flags, team_name)
-            instance_flags |= line_flags
+            line_flags = set(flag_format.findall(line))
+            if line_flags:
+                flag_storage.add(line_flags, team_name)
+                instance_flags |= line_flags
 
-    if attack_no <= args.verbose_attacks and not exit_event.is_set():
-        # We don't want to spam the terminal on KeyboardInterrupt
+        if attack_no <= args.verbose_attacks and not exit_event.is_set():
+            # We don't want to spam the terminal on KeyboardInterrupt
 
-        display_sploit_output(team_name, output_lines)
-        if instance_flags:
-            logging.info('Got {} flags from "{}": {}'.format(
-                len(instance_flags), team_name, instance_flags))
+            display_sploit_output(team_name, output_lines)
+            if instance_flags:
+                logging.info('Got {} flags from "{}": {}'.format(
+                    len(instance_flags), team_name, instance_flags))
+    except Exception as e:
+        logging.error('Failed to process sploit output: {}'.format(repr(e)))
 
 
 class InstanceManager:
@@ -311,38 +318,47 @@ instance_manager = InstanceManager()
 
 
 def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
-    with instance_manager.lock:
-        if exit_event.is_set():
-            return
+    try:
+        with instance_manager.lock:
+            if exit_event.is_set():
+                return
 
-        # For sploits written in Python, this env variable forces the interpreter to flush
-        # stdout and stderr after each newline. Note that this is not default behavior
-        # if the sploit's output is redirected to a pipe.
-        env = os.environ.copy()
-        env['PYTHONUNBUFFERED'] = '1'
+            # For sploits written in Python, this env variable forces the interpreter to flush
+            # stdout and stderr after each newline. Note that this is not default behavior
+            # if the sploit's output is redirected to a pipe.
+            env = os.environ.copy()
+            env['PYTHONUNBUFFERED'] = '1'
 
-        need_close_fds = (os.name != 'nt')
-        proc = subprocess.Popen([os.path.abspath(args.sploit), team_addr],
-                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                bufsize=1, close_fds=need_close_fds, env=env)
-        threading.Thread(target=lambda: consume_sploit_output(
-            proc.stdout, args, team_name, flag_format, attack_no)).start()
+            need_close_fds = (os.name != 'nt')
+            proc = subprocess.Popen([os.path.abspath(args.sploit), team_addr],
+                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                    bufsize=1, close_fds=need_close_fds, env=env)
+            threading.Thread(target=lambda: process_sploit_output(
+                proc.stdout, args, team_name, flag_format, attack_no)).start()
 
-        instance_id = instance_manager.register_start(proc)
+            instance_id = instance_manager.register_start(proc)
+    except Exception as e:
+        logging.error('Failed to run sploit: {}'.format(repr(e)))
+        if attack_no == 1:
+            shutdown()
+        return
 
     try:
-        proc.wait(timeout=max_runtime)
-        need_kill = False
-    except subprocess.TimeoutExpired:
-        need_kill = True
-        if attack_no <= args.verbose_attacks:
-            logging.warning('Sploit for "{}" ({}) ran out of time'.format(team_name, team_addr))
+        try:
+            proc.wait(timeout=max_runtime)
+            need_kill = False
+        except subprocess.TimeoutExpired:
+            need_kill = True
+            if attack_no <= args.verbose_attacks:
+                logging.warning('Sploit for "{}" ({}) ran out of time'.format(team_name, team_addr))
 
-    with instance_manager.lock:
-        if need_kill:
-            proc.kill()
+        with instance_manager.lock:
+            if need_kill:
+                proc.kill()
 
-        instance_manager.register_stop(instance_id, need_kill)
+            instance_manager.register_stop(instance_id, need_kill)
+    except Exception as e:
+        logging.error('Failed to finish sploit: {}'.format(repr(e)))
 
 
 def show_time_limit_info(args, config, max_runtime, attack_no):
@@ -426,8 +442,6 @@ def main(args):
 
 
 def shutdown():
-    logging.info('Got Ctrl+C, shutting down')
-
     # Stop run_post_loop thread
     exit_event.set()
     # Kill all child processes (so consume_sploit_ouput and run_sploit also will stop)
@@ -440,6 +454,6 @@ if __name__ == '__main__':
     try:
         main(parse_args())
     except KeyboardInterrupt:
-        pass
+        logging.info('Got Ctrl+C, shutting down')
     finally:
         shutdown()
