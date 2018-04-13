@@ -29,3 +29,6 @@ CONFIG = {
     'SUBMIT_PERIOD': 5,
     'FLAG_LIFETIME': 5 * 60,
 }
+
+
+SERVER_PASSWORD = 'destructivekek'

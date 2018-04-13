@@ -3,7 +3,7 @@ from datetime import datetime
 
 from flask import jsonify, render_template, request
 
-from server import app, database, reloader
+from server import app, auth, database, reloader
 
 
 @app.template_filter('timestamp_to_datetime')
@@ -12,6 +12,7 @@ def timestamp_to_datetime(s):
 
 
 @app.route('/')
+@auth.auth_required
 def index():
     distinct_values = {}
     for column in ['sploit', 'status', 'team']:
@@ -35,6 +36,7 @@ FLAGS_PER_PAGE = 30
 
 
 @app.route('/ui/show_flags', methods=['POST'])
+@auth.auth_required
 def show_flags():
     conditions = []
     for column in ['sploit', 'status', 'team']:
