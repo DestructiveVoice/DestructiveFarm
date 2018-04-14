@@ -24,6 +24,8 @@ if sys.version_info < (3, 4):
     logging.critical('Support of Python < 3.4 is not implemented yet')
     sys.exit(1)
 
+os_windows = (os.name == 'nt')
+
 
 HEADER = '''
  ____            _                   _   _             _____
@@ -59,7 +61,7 @@ BRIGHT_COLORS = [Style.FG_RED, Style.FG_GREEN, Style.FG_BLUE,
 
 
 def highlight(text, style=None):
-    if os.name == 'nt':
+    if os_windows:
         return text
 
     if style is None:
@@ -133,7 +135,7 @@ SCRIPT_EXTENSIONS = {
 
 def check_script_source(source):
     errors = []
-    if os.name != 'nt' and source[:2] != '#!':
+    if not os_windows and source[:2] != '#!':
         errors.append(
             'Please use shebang (e.g. {}) as the first line of your script'.format(
                 highlight('#!/usr/bin/env python3', [Style.FG_GREEN])))
@@ -169,11 +171,11 @@ def check_sploit(args):
                 logging.error(message)
             raise InvalidSploitError('Sploit won\'t be run because of validation errors')
 
-        if os.name == 'nt' and args.interpreter is None:
+        if os_windows and args.interpreter is None:
             args.interpreter = SCRIPT_EXTENSIONS[extension]
             logging.info('Using interpreter `{}`'.format(args.interpreter))
 
-    if os.name != 'nt':
+    if not os_windows:
         file_mode = os.stat(path).st_mode
         # TODO: May be check the owner and other X flags properly?
         if not file_mode & stat.S_IXUSR:
@@ -184,7 +186,7 @@ def check_sploit(args):
                 raise InvalidSploitError("The provided file doesn't appear to be executable")
 
 
-if os.name == 'nt':
+if os_windows:
     # By default, Ctrl+C does not work on Windows if we spawn subprocesses.
     # Here we fix that using WinApi. See https://stackoverflow.com/a/43095532
 
@@ -412,9 +414,9 @@ def launch_sploit(args, team_name, team_addr, attack_no, flag_format):
         command = [args.interpreter] + command
     if team_addr is not None:
         command.append(team_addr)
-    need_close_fds = (os.name != 'nt')
+    need_close_fds = (not os_windows)
 
-    if os.name == 'nt':
+    if os_windows:
         # On Windows, we block Ctrl+C handling, spawn the process, and
         # then recover the handler. This is the only way to make Ctrl+C
         # intercepted by us instead of our child processes.
@@ -422,7 +424,7 @@ def launch_sploit(args, team_name, team_addr, attack_no, flag_format):
     proc = subprocess.Popen(command,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             bufsize=1, close_fds=need_close_fds, env=env)
-    if os.name == 'nt':
+    if os_windows:
         kernel32.SetConsoleCtrlHandler(win_ignore_ctrl_c, False)
 
     threading.Thread(target=lambda: process_sploit_output(
