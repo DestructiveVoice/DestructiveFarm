@@ -184,6 +184,45 @@ def check_sploit(args):
                 raise InvalidSploitError("The provided file doesn't appear to be executable")
 
 
+if os.name == 'nt':
+    # By default, Ctrl+C does not work on Windows if we spawn subprocesses.
+    # Here we fix that using WinApi. See https://stackoverflow.com/a/43095532
+
+    import signal
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+
+    # BOOL WINAPI HandlerRoutine(
+    #   _In_ DWORD dwCtrlType
+    # );
+    PHANDLER_ROUTINE = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.DWORD)
+
+    win_ignore_ctrl_c = PHANDLER_ROUTINE()  # = NULL
+
+    def _errcheck_bool(result, _, args):
+        if not result:
+            raise ctypes.WinError(ctypes.get_last_error())
+        return args
+
+    # BOOL WINAPI SetConsoleCtrlHandler(
+    #   _In_opt_ PHANDLER_ROUTINE HandlerRoutine,
+    #   _In_     BOOL             Add
+    # );
+    kernel32.SetConsoleCtrlHandler.errcheck = _errcheck_bool
+    kernel32.SetConsoleCtrlHandler.argtypes = (PHANDLER_ROUTINE, wintypes.BOOL)
+
+    @PHANDLER_ROUTINE
+    def win_ctrl_handler(dwCtrlType):
+        if dwCtrlType == signal.CTRL_C_EVENT:
+            kernel32.SetConsoleCtrlHandler(win_ignore_ctrl_c, True)
+            shutdown()
+        return False
+
+    kernel32.SetConsoleCtrlHandler(win_ctrl_handler, True)
+
+
 class APIException(Exception):
     pass
 
@@ -375,9 +414,17 @@ def launch_sploit(args, team_name, team_addr, attack_no, flag_format):
         command.append(team_addr)
     need_close_fds = (os.name != 'nt')
 
+    if os.name == 'nt':
+        # On Windows, we block Ctrl+C handling, spawn the process, and
+        # then recover the handler. This is the only way to make Ctrl+C
+        # intercepted by us instead of our child processes.
+        kernel32.SetConsoleCtrlHandler(win_ignore_ctrl_c, True)
     proc = subprocess.Popen(command,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             bufsize=1, close_fds=need_close_fds, env=env)
+    if os.name == 'nt':
+        kernel32.SetConsoleCtrlHandler(win_ignore_ctrl_c, False)
+
     threading.Thread(target=lambda: process_sploit_output(
         proc.stdout, args, team_name, flag_format, attack_no)).start()
 
