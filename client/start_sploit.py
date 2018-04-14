@@ -75,7 +75,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Run a sploit on all teams in a loop',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-    parser.add_argument('sploit', help='Sploit executable')
+    parser.add_argument('sploit',
+                        help="Sploit executable (should take a victim's host as the first argument)")
     parser.add_argument('--server-url', default='http://farm.kolambda.com:5000', help='Server URL')
 
     parser.add_argument('--pool-size', type=int, default=50,
