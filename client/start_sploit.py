@@ -313,18 +313,17 @@ def process_sploit_output(stream, args, team_name, flag_format, attack_no):
         logging.error('Failed to process sploit output: {}'.format(repr(e)))
 
 
-class InstanceManager:
+class InstanceStorage:
     """
     Storage comprised of a dictionary of all running sploit instances and some statistics.
 
-    The lock inside this class should be acquired by a class user. Any methods and fields
-    must be used only when the lock is taken by the current thread.
+    Always acquire instance_lock before using this class. Do not release the lock
+    between actual spawning/killing a process and calling register_start()/register_stop().
     """
 
     def __init__(self):
         self._counter = 0
         self.instances = {}
-        self.lock = threading.RLock()
 
         self.n_completed = 0
         self.n_killed = 0
@@ -342,8 +341,8 @@ class InstanceManager:
         self.n_killed += was_killed
 
 
-instance_manager = InstanceManager()
-# TODO: Exclude lock from the class, rename InstanceManager to InstanceStorage
+instance_storage = InstanceStorage()
+instance_lock = threading.RLock()
 
 
 def launch_sploit(args, team_name, team_addr, attack_no, flag_format):
@@ -366,12 +365,12 @@ def launch_sploit(args, team_name, team_addr, attack_no, flag_format):
     threading.Thread(target=lambda: process_sploit_output(
         proc.stdout, args, team_name, flag_format, attack_no)).start()
 
-    return proc, instance_manager.register_start(proc)
+    return proc, instance_storage.register_start(proc)
 
 
 def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
     try:
-        with instance_manager.lock:
+        with instance_lock:
             proc, instance_id = launch_sploit(args, team_name, team_addr, attack_no, flag_format)
     except Exception as e:
         if isinstance(e, FileNotFoundError):
@@ -394,11 +393,11 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
             if attack_no <= args.verbose_attacks:
                 logging.warning('Sploit for "{}" ({}) ran out of time'.format(team_name, team_addr))
 
-        with instance_manager.lock:
+        with instance_lock:
             if need_kill:
                 proc.kill()
 
-            instance_manager.register_stop(instance_id, need_kill)
+            instance_storage.register_stop(instance_id, need_kill)
     except Exception as e:
         logging.error('Failed to finish sploit: {}'.format(repr(e)))
 
@@ -412,10 +411,11 @@ def show_time_limit_info(args, config, max_runtime, attack_no):
                             "to catch flags for each round before their expiration".format(min_attack_period))
 
     logging.info('Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
-    if instance_manager.n_completed > 0:
-        # TODO: Maybe better for 10 last attacks
-        logging.info('Total {:.1f}% of instances ran out of time'.format(
-            float(instance_manager.n_killed) / instance_manager.n_completed * 100))
+    with instance_lock:
+        if instance_storage.n_completed > 0:
+            # TODO: Maybe better for 10 last attacks
+            logging.info('Total {:.1f}% of instances ran out of time'.format(
+                float(instance_storage.n_killed) / instance_storage.n_completed * 100))
 
 
 PRINTED_TEAM_NAMES = 5
@@ -487,8 +487,8 @@ def shutdown():
     # Stop run_post_loop thread
     exit_event.set()
     # Kill all child processes (so consume_sploit_ouput and run_sploit also will stop)
-    with instance_manager.lock:
-        for proc in instance_manager.instances.values():
+    with instance_lock:
+        for proc in instance_storage.instances.values():
             proc.kill()
 
 
