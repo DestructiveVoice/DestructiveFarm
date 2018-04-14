@@ -77,32 +77,37 @@ def parse_args():
 
     parser.add_argument('sploit',
                         help="Sploit executable (should take a victim's host as the first argument)")
-    parser.add_argument('--server-url', default='http://farm.kolambda.com:5000', help='Server URL')
+    parser.add_argument('--server-url', metavar='URL', default='http://farm.kolambda.com:5000',
+                        help='Server URL')
+    parser.add_argument('--interpreter', metavar='COMMAND',
+                        help='Explicitly specify sploit interpreter (use on Windows, which doesn\'t '
+                             'understand shebangs)')
 
-    parser.add_argument('--pool-size', type=int, default=50,
-                        help='Maximal number of concurrent sploit instances '
-                             '(too little will make time limits for sploits smaller, '
-                             'too big will eat all RAM on your computer)')
-    parser.add_argument('--attack-period', type=float, default=120,
+    parser.add_argument('--pool-size', metavar='N', type=int, default=50,
+                        help='Maximal number of concurrent sploit instances. '
+                             'Too little value will make time limits for sploits smaller, '
+                             'too big will eat all RAM on your computer')
+    parser.add_argument('--attack-period', metavar='N', type=float, default=120,
                         help='Rerun the sploit on all teams each N seconds '
-                             '(too little will make time limits for sploits smaller, '
-                             'too big will miss flags from some rounds)')
+                             'Too little value will make time limits for sploits smaller, '
+                             'too big will miss flags from some rounds')
 
-    parser.add_argument('-v', '--verbose-attacks', type=int, default=1,
+    parser.add_argument('-v', '--verbose-attacks', metavar='N', type=int, default=1,
                         help="Sploits' outputs and found flags will be shown for the N first attacks")
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--not-per-team', action='store_true',
                        help='Run a single instance of the sploit instead of an instance per team')
-    group.add_argument('--distribute',
+    group.add_argument('--distribute', metavar='K/N',
                        help='Divide the team list to N parts (by address hash modulo N) '
-                            'and run the sploits only on Kth part of it (K >= 1). '
-                            'Syntax: --distribute K/N')
+                            'and run the sploits only on Kth part of it (K >= 1)')
 
     return parser.parse_args()
 
 
 def fix_args(args):
+    check_sploit(args)
+
     if '://' not in args.server_url:
         args.server_url = 'http://' + args.server_url
 
@@ -119,12 +124,16 @@ def fix_args(args):
             raise ValueError('Wrong syntax for --distribute, use --distribute K/N (N >= 2, 1 <= K <= N)')
 
 
-SCRIPT_EXTENSIONS = ['.pl', '.py', '.rb']
+SCRIPT_EXTENSIONS = {
+    '.pl': 'perl',
+    '.py': 'python',
+    '.rb': 'ruby',
+}
 
 
 def check_script_source(source):
     errors = []
-    if source[:2] != '#!':
+    if os.name != 'nt' and source[:2] != '#!':
         errors.append(
             'Please use shebang (e.g. {}) as the first line of your script'.format(
                 highlight('#!/usr/bin/env python3', [Style.FG_GREEN])))
@@ -143,11 +152,13 @@ class InvalidSploitError(Exception):
     pass
 
 
-def check_sploit(path):
+def check_sploit(args):
+    path = args.sploit
     if not os.path.isfile(path):
         raise ValueError('No such file: {}'.format(path))
 
-    is_script = os.path.splitext(path)[1].lower() in SCRIPT_EXTENSIONS
+    extension = os.path.splitext(path)[1].lower()
+    is_script = extension in SCRIPT_EXTENSIONS
     if is_script:
         with open(path, 'r', errors='ignore') as f:
             source = f.read()
@@ -157,6 +168,10 @@ def check_sploit(path):
             for message in errors:
                 logging.error(message)
             raise InvalidSploitError('Sploit won\'t be run because of validation errors')
+
+        if os.name == 'nt' and args.interpreter is None:
+            args.interpreter = SCRIPT_EXTENSIONS[extension]
+            logging.info('Using interpreter `{}`'.format(args.interpreter))
 
     if os.name != 'nt':
         file_mode = os.stat(path).st_mode
@@ -354,9 +369,12 @@ def launch_sploit(args, team_name, team_addr, attack_no, flag_format):
     env['PYTHONUNBUFFERED'] = '1'
 
     command = [os.path.abspath(args.sploit)]
+    if args.interpreter is not None:
+        command = [args.interpreter] + command
     if team_addr is not None:
         command.append(team_addr)
     need_close_fds = (os.name != 'nt')
+
     proc = subprocess.Popen(command,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             bufsize=1, close_fds=need_close_fds, env=env)
@@ -376,7 +394,7 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
     except Exception as e:
         if isinstance(e, FileNotFoundError):
             logging.error('Sploit file or the interpreter for it not found: {}'.format(repr(e)))
-            logging.error('Check your shebang (use {} for compatibility) and presence of the sploit file'.format(
+            logging.error('Check presence of the sploit file and the shebang (use {} for compatibility)'.format(
                 highlight('#!/usr/bin/env ...', [Style.FG_GREEN])))
         else:
             logging.error('Failed to run sploit: {}'.format(repr(e)))
@@ -447,7 +465,6 @@ def get_target_teams(args, teams, attack_no):
 def main(args):
     try:
         fix_args(args)
-        check_sploit(args.sploit)
     except (ValueError, InvalidSploitError) as e:
         logging.critical(str(e))
         return
