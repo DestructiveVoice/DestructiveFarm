@@ -21,37 +21,45 @@ _init_lock = threading.RLock()
 def _init():
     app.logger.info('Creating database schema')
     with app.open_resource('schema.sql', 'r') as f:
-        g.db.executescript(f.read())
+        g.database.executescript(f.read())
 
 
-def get():
+def get(context_bound=True):
     """
-    get() opens a connection to the SQLite database if it wasn't opened
-    in the current request already. Reopening the connection on each request
-    does not have a big overhead but allows not to implement a pool of
+    If there is no opened connection to the SQLite database in the context
+    of the current request or if context_bound=False, get() opens a new
+    connection to the SQLite database. Reopening the connection on each request
+    does not have a big overhead, but allows to avoid implementing a pool of
     thread-local connections (see https://stackoverflow.com/a/14520670).
 
     If the database did not exist, get() creates and initializes it.
-    If get() is called from other threads at the same time, they will wait
+    If get() is called from other threads at this time, they will wait
     for the end of the initialization.
+
+    If context_bound=True, the connection will be closed after
+    request handling (when the context will be destroyed).
 
     :returns: a connection to the initialized SQLite database
     """
 
     global _init_started
 
-    if 'database' not in g:
-        need_init = not os.path.exists(db_filename)
-        g.db = sqlite3.connect(db_filename)
-        g.db.row_factory = sqlite3.Row
+    if context_bound and 'database' in g:
+        return g.database
 
-        if need_init:
-            with _init_lock:
-                if not _init_started:
-                    _init_started = True
-                    _init()
+    need_init = not os.path.exists(db_filename)
+    database = sqlite3.connect(db_filename)
+    database.row_factory = sqlite3.Row
 
-    return g.db
+    if need_init:
+        with _init_lock:
+            if not _init_started:
+                _init_started = True
+                _init()
+
+    if context_bound:
+        g.database = database
+    return database
 
 
 def query(sql, args=()):

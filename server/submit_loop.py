@@ -53,7 +53,7 @@ def submit_flags(flags, config):
 def run_loop():
     app.logger.info('Starting submit loop')
     with app.app_context():
-        db = database.get()
+        db = database.get(context_bound=False)
 
     while True:
         submit_start_time = time.time()
@@ -74,7 +74,7 @@ def run_loop():
                 grouped_flags[item.sploit, item.team].append(item)
             flags = get_fair_share(grouped_flags.values(), config['SUBMIT_FLAG_LIMIT'])
 
-            app.logger.debug('Submitting %s flags (%s in queue)', len(flags), len(queued_flags))
+            app.logger.debug('Submitting %s flags (out of %s in queue)', len(flags), len(queued_flags))
             results = submit_flags(flags, config)
 
             rows = [(item.status.name, item.checksystem_response, item.flag) for item in results]

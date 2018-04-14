@@ -14,6 +14,7 @@ import sys
 import time
 import threading
 from concurrent.futures import ThreadPoolExecutor
+from enum import Enum
 from math import ceil
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
@@ -35,19 +36,38 @@ Note that this software is highly destructive. Keep it away from children.
 '''[1:]
 
 
-HIGHLIGHT_COLORS = [31, 32, 34, 35, 36]
+class Style(Enum):
+    """
+    Bash escape sequences, see:
+    https://misc.flogisoft.com/bash/tip_colors_and_formatting
+    """
+
+    BOLD = 1
+
+    FG_BLACK = 30
+    FG_RED = 31
+    FG_GREEN = 32
+    FG_YELLOW = 33
+    FG_BLUE = 34
+    FG_MAGENTA = 35
+    FG_CYAN = 36
+    FG_LIGHT_GRAY = 37
 
 
-def highlight(text, bold=True, color=None):
+BRIGHT_COLORS = [Style.FG_RED, Style.FG_GREEN, Style.FG_BLUE,
+                 Style.FG_MAGENTA, Style.FG_CYAN]
+
+
+def highlight(text, style=None):
     if os.name == 'nt':
         return text
 
-    if color is None:
-        color = random.choice(HIGHLIGHT_COLORS)
-    return '\033[{}{}m'.format('1;' if bold else '', color) + text + '\033[0m'
+    if style is None:
+        style = [Style.BOLD, random.choice(BRIGHT_COLORS)]
+    return '\033[{}m'.format(';'.join(str(item.value) for item in style)) + text + '\033[0m'
 
 
-log_format = '%(asctime)s {} %(message)s'.format(highlight('%(levelname)s', bold=False, color=33))
+log_format = '%(asctime)s {} %(message)s'.format(highlight('%(levelname)s', [Style.FG_YELLOW]))
 logging.basicConfig(format=log_format, datefmt='%H:%M:%S', level=logging.DEBUG)
 
 
@@ -88,7 +108,7 @@ def parse_distribute_argument(value):
             k, n = (int(match.group(1)), int(match.group(2)))
             if n >= 2 and 1 <= k <= n:
                 return k, n
-        raise ValueError('Wrong syntax for --distribute, use --distribute=K/N (N >= 2, 1 <= K <= N)')
+        raise ValueError('Wrong syntax for --distribute, use --distribute K/N (N >= 2, 1 <= K <= N)')
     return None
 
 
@@ -100,15 +120,15 @@ def check_script_source(source):
     if source[:2] != '#!':
         errors.append(
             'Please use shebang (e.g. {}) as the first line of your script'.format(
-                highlight('#!/usr/bin/env python3', bold=False, color=32)))
+                highlight('#!/usr/bin/env python3', [Style.FG_GREEN])))
     if re.search(r'flush[(=]', source) is None:
         errors.append(
             'Please print the newline and call {} each time after your sploit outputs flags. '
             'In Python 3, you can use {}. '
             'Otherwise, the flags may be lost (if the sploit process is killed) or '
             'sent with a delay.'.format(
-                highlight('flush()', bold=False, color=31),
-                highlight('print(..., flush=True)', bold=False, color=32)))
+                highlight('flush()', [Style.FG_RED]),
+                highlight('print(..., flush=True)', [Style.FG_GREEN])))
     return errors
 
 
@@ -133,6 +153,7 @@ def check_sploit(path):
 
     if os.name != 'nt':
         file_mode = os.stat(path).st_mode
+        # TODO: May be check the owner and other X flags properly?
         if not file_mode & stat.S_IXUSR:
             if is_script:
                 logging.info('Setting the executable bit on `{}`'.format(path))
@@ -222,6 +243,7 @@ flag_storage = FlagStorage()
 
 POST_PERIOD = 5
 POST_FLAG_LIMIT = 10000
+# TODO: test that 10k flags won't lead to the hangup of the farm server
 
 
 def run_post_loop(args):
@@ -315,6 +337,7 @@ class InstanceManager:
 
 
 instance_manager = InstanceManager()
+# TODO: Exclude lock from the class, rename InstanceManager to InstanceStorage
 
 
 def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
@@ -329,8 +352,11 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
             env = os.environ.copy()
             env['PYTHONUNBUFFERED'] = '1'
 
+            command = [os.path.abspath(args.sploit)]
+            if team_addr is not None:
+                command.append(team_addr)
             need_close_fds = (os.name != 'nt')
-            proc = subprocess.Popen([os.path.abspath(args.sploit), team_addr],
+            proc = subprocess.Popen(command,
                                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                     bufsize=1, close_fds=need_close_fds, env=env)
             threading.Thread(target=lambda: process_sploit_output(
@@ -338,10 +364,12 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
 
             instance_id = instance_manager.register_start(proc)
     except Exception as e:
-        logging.error('Failed to run sploit: {}'.format(repr(e)))
         if isinstance(e, FileNotFoundError):
+            logging.error('Sploit file or the interpreter for it not found: {}'.format(repr(e)))
             logging.error('Check your shebang (use {} for compatibility) and presence of the sploit file'.format(
-                highlight('#!/usr/bin/env ...', bold=False, color=32)))
+                highlight('#!/usr/bin/env ...', [Style.FG_GREEN])))
+        else:
+            logging.error('Failed to run sploit: {}'.format(repr(e)))
 
         if attack_no == 1:
             shutdown()
@@ -375,6 +403,7 @@ def show_time_limit_info(args, config, max_runtime, attack_no):
 
     logging.info('Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
     if instance_manager.n_completed > 0:
+        # TODO: Maybe better for 10 last attacks
         logging.info('Total {:.1f}% of instances ran out of time'.format(
             float(instance_manager.n_killed) / instance_manager.n_completed * 100))
 
@@ -384,7 +413,7 @@ PRINTED_TEAM_NAMES = 5
 
 def get_target_teams(args, teams, distribute, attack_no):
     if args.not_per_team:
-        return {'*': '0.0.0.0'}
+        return {'*': None}
 
     if distribute is not None:
         k, n = distribute
@@ -406,6 +435,9 @@ def get_target_teams(args, teams, distribute, attack_no):
 
 def main(args):
     try:
+        if '://' not in args.server_url:
+            args.server_url = 'http://' + args.server_url
+
         distribute = parse_distribute_argument(args.distribute)
 
         check_sploit(args.sploit)

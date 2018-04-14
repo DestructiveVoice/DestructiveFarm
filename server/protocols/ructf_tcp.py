@@ -13,11 +13,12 @@ RESPONSES = {
 
 
 READ_TIMEOUT = 5
-APPEND_TIMEOUT = 0.1
+APPEND_TIMEOUT = 0.05
 BUFSIZE = 4096
 
 
 def recvall(sock):
+    sock.settimeout(READ_TIMEOUT)
     chunks = [sock.recv(BUFSIZE)]
 
     sock.settimeout(APPEND_TIMEOUT)
