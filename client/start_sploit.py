@@ -347,9 +347,6 @@ instance_lock = threading.RLock()
 
 
 def launch_sploit(args, team_name, team_addr, attack_no, flag_format):
-    if exit_event.is_set():
-        return
-
     # For sploits written in Python, this env variable forces the interpreter to flush
     # stdout and stderr after each newline. Note that this is not default behavior
     # if the sploit's output is redirected to a pipe.
@@ -372,6 +369,9 @@ def launch_sploit(args, team_name, team_addr, attack_no, flag_format):
 def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
     try:
         with instance_lock:
+            if exit_event.is_set():
+                return
+
             proc, instance_id = launch_sploit(args, team_name, team_addr, attack_no, flag_format)
     except Exception as e:
         if isinstance(e, FileNotFoundError):
