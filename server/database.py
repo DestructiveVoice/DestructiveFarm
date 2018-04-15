@@ -18,10 +18,10 @@ _init_started = False
 _init_lock = threading.RLock()
 
 
-def _init():
+def _init(database):
     app.logger.info('Creating database schema')
     with app.open_resource('schema.sql', 'r') as f:
-        g.database.executescript(f.read())
+        database.executescript(f.read())
 
 
 def get(context_bound=True):
@@ -55,7 +55,7 @@ def get(context_bound=True):
         with _init_lock:
             if not _init_started:
                 _init_started = True
-                _init()
+                _init(database)
 
     if context_bound:
         g.database = database

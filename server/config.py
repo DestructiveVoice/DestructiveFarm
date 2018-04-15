@@ -4,8 +4,8 @@ CONFIG = {
     # The clients will run sploits on TEAMS and
     # fetch FLAG_FORMAT from sploits' stdout.
     'TEAMS': {'Team #{}'.format(i): '10.0.0.{}'.format(i)
-              for i in range(1, 500)},
-    'FLAG_FORMAT': r'\w{31}=',
+              for i in range(1, 29 + 1)},
+    'FLAG_FORMAT': r'[A-Z0-9]{31}=',
 
     # This configures how and where to submit flags.
     # The protocol must be a module in protocols/ directory.
