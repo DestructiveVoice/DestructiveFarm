@@ -1,0 +1,21 @@
+Copyright © 2016-2017 Александр Борзунов
+
+Данное программное обеспечение и связанная с ним документация может использоваться, копироваться и/или модифицироваться исключительно:
+
+1. Людьми, когда-либо являвшимися студентами бакалавриата, магистратуры и/или аспирантуры Уральского федерального университета (Екатеринбург, Россия).
+
+2. Участниками команд, в составе которых есть человек, подпадающий под пункт 1. Если программное обеспечение используется на соревновании, этот человек должен участвовать в нём в составе данной команды.
+
+Все модификации данного ПО и связанной документации должны содержать уведомление об авторских правах и копию данной лицензии. Распространение данного ПО и связанной документации за пределы круга людей, которым не позволено их использование, запрещено.
+
+----------
+
+Copyright © 2016-2017 Aleksandr Borzunov
+
+This software and associated documentation may be used, copied, and/or modified exclusively by:
+
+1. People who have ever been Bachelor's, Master's, and/or PhD students in Ural Federal University (Yekaterinburg, Russia).
+
+2. Members of teams that contain a person who satisfies the first clause. If the software is used during a competition, this person must participate in it as a member of this team.
+
+All modifications of this software and the associated documentation must contain the copyright notice and a copy of this license. Distribution of this software and the associated documentation among people who are not allowed to use it is prohibited.
