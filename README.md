@@ -29,7 +29,7 @@ Destructive Farm
 
 <p align="center">
     <img src="https://github.com/borzunov/DestructiveFarm/blob/master/docs/images/diagram.png" width="500"><br><br>
-    <i>Стрелки на диаграмме указывают направление движения флагов.</i>
+    <i>Стрелки на диаграмме указывают направление движения флагов</i>
 </p>
 
 ## Планы на будущее
