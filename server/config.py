@@ -31,5 +31,5 @@ CONFIG = {
 
     # Password for the web interface. This key will be excluded from config
     # before sending it to farm clients.
-    'SERVER_PASSWORD': 'destructivekek',
+    'SERVER_PASSWORD': '1234',
 }

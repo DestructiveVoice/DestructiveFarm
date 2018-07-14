@@ -1,7 +1,7 @@
 def generate_spam_flag():
     import base64, hashlib, os, re
     encode = lambda s: re.sub(r'[a-z/+=\n]', r'', base64.encodebytes(s).decode()).upper()
-    secret = 'destructivespam'
+    secret = '1234'
 
     prefix = encode(os.urandom(64))[:16]
     suffix = encode(hashlib.sha256((prefix + secret).encode()).digest())[:15]
@@ -11,7 +11,7 @@ def generate_spam_flag():
 def is_spam_flag(flag):
     import base64, hashlib, re
     encode = lambda s: re.sub(r'[a-z/+=\n]', r'', base64.encodebytes(s).decode()).upper()
-    secret = 'destructivespam'
+    secret = '1234'
 
     prefix = flag[:16].upper()
     suffix = encode(hashlib.sha256((prefix + secret).encode()).digest())[:15]
