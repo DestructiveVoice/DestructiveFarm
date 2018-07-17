@@ -271,8 +271,8 @@ class FlagStorage:
     """
     Thread-safe storage comprised of a set and a post queue.
 
-    Any number of threads can call add(), but only one "consumer thread"
-    can call get_flags() and mark_as_sent().
+    Any number of threads may call add(), but only one "consumer thread"
+    may call pick_flags() and mark_as_sent().
     """
 
     def __init__(self):
