@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+  farm:
+    build: .
+    volumes:
+      - $PWD/config.py:/app/server/config.py:ro
+      - $PWD/flags.sqlite:/app/server/flags.sqlite
+    environment:
+      - AUTH_PASS=
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - $PWD/nginx.conf:/etc/nginx/nginx.conf:ro
+      - $PWD/auth.digest:/etc/nginx/auth.digest
+      - $PWD/ssl:/etc/nginx/ssl:ro
+    ports:
+      - 80:80
+      - 443:443
