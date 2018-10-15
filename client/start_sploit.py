@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from math import ceil
 from urllib.parse import urljoin
-from urllib.request import Request, urlopen
+from urllib.request import Request, urlopen, ssl
 
 
 if sys.version_info < (3, 4):
@@ -96,6 +96,8 @@ def parse_args():
 
     parser.add_argument('-v', '--verbose-attacks', metavar='N', type=int, default=1,
                         help="Sploits' outputs and found flags will be shown for the N first attacks")
+    parser.add_argument('--ssl', metavar='FILE', help='SSL certificate to communicate with the farm. '
+                                                      'If none plain http is used')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--not-per-team', action='store_true',
@@ -233,7 +235,7 @@ SERVER_TIMEOUT = 5
 
 
 def get_config(args):
-    with urlopen(urljoin(args.server_url, '/api/get_config'), timeout=SERVER_TIMEOUT) as conn:
+    with urlopen(urljoin(args.server_url, '/api/get_config'), timeout=SERVER_TIMEOUT, context=sslctx) as conn:
         if conn.status != 200:
             raise APIException(conn.read())
 
@@ -247,7 +249,7 @@ def post_flags(args, flags):
 
     req = Request(urljoin(args.server_url, '/api/post_flags'))
     req.add_header('Content-Type', 'application/json')
-    with urlopen(req, data=json.dumps(data).encode(), timeout=SERVER_TIMEOUT) as conn:
+    with urlopen(req, data=json.dumps(data).encode(), timeout=SERVER_TIMEOUT, context=sslctx) as conn:
         if conn.status != 200:
             raise APIException(conn.read())
 
@@ -517,6 +519,12 @@ def main(args):
     except (ValueError, InvalidSploitError) as e:
         logging.critical(str(e))
         return
+
+    global sslctx
+    sslctx = ssl.create_default_context()
+    if args.ssl:
+        sslctx.load_verify_locations(args.ssl)
+        sslctx.check_hostname = False
 
     print(highlight(HEADER))
     logging.info('Connecting to the farm server at {}'.format(args.server_url))
