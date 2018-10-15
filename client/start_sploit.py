@@ -19,9 +19,6 @@ from math import ceil
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen, ssl
 
-sslctx = ssl.create_default_context()
-sslctx.load_verify_locations('farm.crt')
-sslctx.check_hostname = False
 
 if sys.version_info < (3, 4):
     logging.critical('Support of Python < 3.4 is not implemented yet')
@@ -59,8 +56,7 @@ class Style(Enum):
     FG_LIGHT_GRAY = 37
 
 
-BRIGHT_COLORS = [Style.FG_RED, Style.FG_GREEN, Style.FG_BLUE,
-                 Style.FG_MAGENTA, Style.FG_CYAN]
+BRIGHT_COLORS = [Style.FG_RED, Style.FG_GREEN, Style.FG_BLUE, Style.FG_MAGENTA, Style.FG_CYAN]
 
 
 def highlight(text, style=None):
@@ -100,6 +96,8 @@ def parse_args():
 
     parser.add_argument('-v', '--verbose-attacks', metavar='N', type=int, default=1,
                         help="Sploits' outputs and found flags will be shown for the N first attacks")
+    parser.add_argument('--ssl', metavar='FILE', help='SSL certificate to communicate with the farm. '
+                                                      'If none plain http is used')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--not-per-team', action='store_true',
@@ -127,8 +125,7 @@ def fix_args(args):
                 valid = True
 
         if not valid:
-            raise ValueError(
-                'Wrong syntax for --distribute, use --distribute K/N (N >= 2, 1 <= K <= N)')
+            raise ValueError('Wrong syntax for --distribute, use --distribute K/N (N >= 2, 1 <= K <= N)')
 
 
 SCRIPT_EXTENSIONS = {
@@ -174,8 +171,7 @@ def check_sploit(args):
         if errors:
             for message in errors:
                 logging.error(message)
-            raise InvalidSploitError(
-                'Sploit won\'t be run because of validation errors')
+            raise InvalidSploitError('Sploit won\'t be run because of validation errors')
 
         if os_windows and args.interpreter is None:
             args.interpreter = SCRIPT_EXTENSIONS[extension]
@@ -189,8 +185,7 @@ def check_sploit(args):
                 logging.info('Setting the executable bit on `{}`'.format(path))
                 os.chmod(path, file_mode | stat.S_IXUSR)
             else:
-                raise InvalidSploitError(
-                    "The provided file doesn't appear to be executable")
+                raise InvalidSploitError("The provided file doesn't appear to be executable")
 
 
 if os_windows:
@@ -329,8 +324,7 @@ def run_post_loop(args):
                     logging.info('{} flags posted to the server ({} in the queue)'.format(
                         len(flags_to_post), flag_storage.queue_size))
                 except Exception as e:
-                    logging.error(
-                        "Can't post flags to the server: {}".format(repr(e)))
+                    logging.error("Can't post flags to the server: {}".format(repr(e)))
                     logging.info("The flags will be posted next time")
     except Exception as e:
         logging.critical('Posting loop died: {}'.format(repr(e)))
@@ -347,8 +341,7 @@ def display_sploit_output(team_name, output_lines):
 
     prefix = highlight(team_name + ': ')
     with display_output_lock:
-        print('\n' + '\n'.join(prefix + line.rstrip()
-                               for line in output_lines) + '\n')
+        print('\n' + '\n'.join(prefix + line.rstrip() for line in output_lines) + '\n')
 
 
 def process_sploit_output(stream, args, team_name, flag_format, attack_no):
@@ -448,12 +441,10 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
             if exit_event.is_set():
                 return
 
-            proc, instance_id = launch_sploit(
-                args, team_name, team_addr, attack_no, flag_format)
+            proc, instance_id = launch_sploit(args, team_name, team_addr, attack_no, flag_format)
     except Exception as e:
         if isinstance(e, FileNotFoundError):
-            logging.error(
-                'Sploit file or the interpreter for it not found: {}'.format(repr(e)))
+            logging.error('Sploit file or the interpreter for it not found: {}'.format(repr(e)))
             logging.error('Check presence of the sploit file and the shebang (use {} for compatibility)'.format(
                 highlight('#!/usr/bin/env ...', [Style.FG_GREEN])))
         else:
@@ -470,8 +461,7 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
         except subprocess.TimeoutExpired:
             need_kill = True
             if attack_no <= args.verbose_attacks:
-                logging.warning(
-                    'Sploit for "{}" ({}) ran out of time'.format(team_name, team_addr))
+                logging.warning('Sploit for "{}" ({}) ran out of time'.format(team_name, team_addr))
 
         with instance_lock:
             if need_kill:
@@ -484,15 +474,13 @@ def run_sploit(args, team_name, team_addr, attack_no, max_runtime, flag_format):
 
 def show_time_limit_info(args, config, max_runtime, attack_no):
     if attack_no == 1:
-        min_attack_period = config['FLAG_LIFETIME'] - \
-            config['SUBMIT_PERIOD'] - POST_PERIOD
+        min_attack_period = config['FLAG_LIFETIME'] - config['SUBMIT_PERIOD'] - POST_PERIOD
         if args.attack_period >= min_attack_period:
             logging.warning("--attack-period should be < {:.1f} sec, "
                             "otherwise the sploit will not have time "
                             "to catch flags for each round before their expiration".format(min_attack_period))
 
-    logging.info(
-        'Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
+    logging.info('Time limit for a sploit instance: {:.1f} sec'.format(max_runtime))
     with instance_lock:
         if instance_storage.n_completed > 0:
             # TODO: Maybe better for 10 last attacks
@@ -517,8 +505,7 @@ def get_target_teams(args, teams, attack_no):
             names = sorted(teams.keys())
             if len(names) > PRINTED_TEAM_NAMES:
                 names = names[:PRINTED_TEAM_NAMES] + ['...']
-            logging.info('Sploit will be run on {} teams: {}'.format(
-                len(teams), ', '.join(names)))
+            logging.info('Sploit will be run on {} teams: {}'.format(len(teams), ', '.join(names)))
     else:
         logging.error('There is no teams to attack for this farm client, fix "TEAMS" value '
                       'in your server config or the usage of --distribute')
@@ -532,6 +519,12 @@ def main(args):
     except (ValueError, InvalidSploitError) as e:
         logging.critical(str(e))
         return
+
+    global sslctx
+    sslctx = ssl.create_default_context()
+    if args.ssl:
+        sslctx.load_verify_locations(args.ssl)
+        sslctx.check_hostname = False
 
     print(highlight(HEADER))
     logging.info('Connecting to the farm server at {}'.format(args.server_url))
@@ -547,8 +540,7 @@ def main(args):
             config = get_config(args)
             flag_format = re.compile(config['FLAG_FORMAT'])
         except Exception as e:
-            logging.error(
-                "Can't get config from the server: {}".format(repr(e)))
+            logging.error("Can't get config from the server: {}".format(repr(e)))
             if attack_no == 1:
                 return
             logging.info('Using the old config')
@@ -565,8 +557,7 @@ def main(args):
         show_time_limit_info(args, config, max_runtime, attack_no)
 
         for team_name, team_addr in teams.items():
-            pool.submit(run_sploit, args, team_name, team_addr,
-                        attack_no, max_runtime, flag_format)
+            pool.submit(run_sploit, args, team_name, team_addr, attack_no, max_runtime, flag_format)
 
 
 def shutdown():

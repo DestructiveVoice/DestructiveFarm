@@ -5,9 +5,10 @@ services:
     build: .
     volumes:
       - $PWD/config.py:/app/server/config.py:ro
-      - $PWD/flags.sqlite:/app/server/flags.sqlite
+      # - $PWD/flags.sqlite:/app/server/flags.sqlite
     environment:
       - AUTH_PASS=
+    container_name: farm_server
 
   nginx:
     image: nginx:alpine
@@ -18,3 +19,4 @@ services:
     ports:
       - 80:80
       - 443:443
+    container_name: farm_nginx
