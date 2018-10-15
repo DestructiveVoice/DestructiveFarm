@@ -56,7 +56,8 @@ class Style(Enum):
     FG_LIGHT_GRAY = 37
 
 
-BRIGHT_COLORS = [Style.FG_RED, Style.FG_GREEN, Style.FG_BLUE, Style.FG_MAGENTA, Style.FG_CYAN]
+BRIGHT_COLORS = [Style.FG_RED, Style.FG_GREEN, Style.FG_BLUE,
+                 Style.FG_MAGENTA, Style.FG_CYAN]
 
 
 def highlight(text, style=None):
@@ -68,8 +69,7 @@ def highlight(text, style=None):
     return '\033[{}m'.format(';'.join(str(item.value) for item in style)) + text + '\033[0m'
 
 
-log_format = '%(asctime)s {} %(message)s'.format(
-    highlight('%(levelname)s', [Style.FG_YELLOW]))
+log_format = '%(asctime)s {} %(message)s'.format(highlight('%(levelname)s', [Style.FG_YELLOW]))
 logging.basicConfig(format=log_format, datefmt='%H:%M:%S', level=logging.DEBUG)
 
 
@@ -528,8 +528,6 @@ def main(args):
 
     print(highlight(HEADER))
     logging.info('Connecting to the farm server at {}'.format(args.server_url))
-
-    # ssl._create_default_https_context = ssl._create_unverified_context
 
     threading.Thread(target=lambda: run_post_loop(args)).start()
 
