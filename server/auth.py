@@ -20,3 +20,15 @@ def auth_required(f):
             return authenticate()
         return f(*args, **kwargs)
     return decorated
+
+
+def api_auth_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        config = reloader.get_config()
+        if config['ENABLE_API_AUTH']:
+            if request.headers.get('X-Token', '') != config['API_TOKEN']:
+                return Response('Provided token is invalid.', 403)
+        return f(*args, **kwargs)
+    return decorated
+
