@@ -33,7 +33,7 @@ CONFIG = {
     # before sending it to farm clients.
     'SERVER_PASSWORD': '1234',
 
-    # Use Authorization header for farm client requests
+    # Use authorization for API requests
     'ENABLE_API_AUTH': False,
     'API_TOKEN': '00000000000000000000'
 }
