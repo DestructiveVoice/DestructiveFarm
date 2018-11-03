@@ -81,6 +81,8 @@ def parse_args():
                         help="Sploit executable (should take a victim's host as the first argument)")
     parser.add_argument('--server-url', metavar='URL', default='http://farm.kolambda.com:5000',
                         help='Server URL')
+    parser.add_argument('--token', metavar='TOKEN', default='',
+                        help='Farm authorization token')
     parser.add_argument('--interpreter', metavar='COMMAND',
                         help='Explicitly specify sploit interpreter (use on Windows, which doesn\'t '
                              'understand shebangs)')
@@ -233,7 +235,10 @@ SERVER_TIMEOUT = 5
 
 
 def get_config(args):
-    with urlopen(urljoin(args.server_url, '/api/get_config'), timeout=SERVER_TIMEOUT) as conn:
+    req = Request(urljoin(args.server_url, '/api/get_config'))
+    if args.token:
+        req.add_header('X-Token', args.token)
+    with urlopen(req, timeout=SERVER_TIMEOUT) as conn:
         if conn.status != 200:
             raise APIException(conn.read())
 
@@ -247,6 +252,8 @@ def post_flags(args, flags):
 
     req = Request(urljoin(args.server_url, '/api/post_flags'))
     req.add_header('Content-Type', 'application/json')
+    if args.token:
+        req.add_header('X-Token', args.token)
     with urlopen(req, data=json.dumps(data).encode(), timeout=SERVER_TIMEOUT) as conn:
         if conn.status != 200:
             raise APIException(conn.read())

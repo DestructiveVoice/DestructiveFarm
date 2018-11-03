@@ -32,4 +32,8 @@ CONFIG = {
     # Password for the web interface. This key will be excluded from config
     # before sending it to farm clients.
     'SERVER_PASSWORD': '1234',
+
+    # Use authorization for API requests
+    'ENABLE_API_AUTH': False,
+    'API_TOKEN': '00000000000000000000'
 }
