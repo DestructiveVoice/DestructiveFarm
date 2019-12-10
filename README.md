@@ -1,49 +1,53 @@
 Destructive Farm
 ================
 
-Ферма для attack-defense CTF-соревнований
+<p align="center">
+    Language: <b>English</b> | <a href="https://github.com/DestructiveVoice/DestructiveFarm/blob/master/docs/ru/index.md">Русский</a>
+</p>
+
+Exploit farm for attack-defense CTF competitions
 
 <p align="center">
     <img src="https://github.com/borzunov/DestructiveFarm/blob/master/docs/images/farm_server_screenshot.png" width="700">
 </p>
 
-Ознакомьтесь с [FAQ](docs/faq.md), если вы хотите узнать о том, что такое attack-defense CTF, какие возможности предоставляет эта ферма и почему она имеет архитектуру, описанную ниже.
+Read the [FAQ](docs/en/faq.md) if you want to know what are attack-defense CTFs, what features this farm has and why it has the architecture described below.
 
-## Компоненты фермы
+## Components
 
-1. **Эксплоит** &mdash; это скрипт, который позволяет красть флаги в определённом сервисе у команд-противников. Пишется участником во время соревнования. Должен принимать хост (IP или домен) команды-соперника в качестве первого аргумента командной строки (`sys.argv[1]`), атаковать команду и выводить флаги в stdout.
+1. An **exploit** is a script that steals flags from some service of other teams. It is written by a participant during the competition and should accept a victim's host (an IP address or a domain) as the first command-line argument, attack them and print flags to stdout.
 
-    [Пример эксплоита](client/spl_example_runme.py) | [Подробнее о формате эксплоита](docs/exploit_format.md)
+    [Example](client/spl_example_runme.py) | [More details](docs/en/exploit_format.md)
 
-2. **Клиент фермы** &mdash; это утилита, которая регулярно запускает эксплоит, чтобы атаковать чужие команды, и следит за его работой. Запускается участником на своём ноутбуке после написания эксплоита.
+2. A **farm client** is a tool that periodically runs exploits to attack other teams and looks after their work. It is being run by a participant on their laptop after they've written an exploit.
 
-    Клиент представляет собой однофайловый скрипт [start_sploit.py](client/start_sploit.py) из данного репозитория.
+    The client is a one-file script [start_sploit.py](client/start_sploit.py) from this repository.
 
-    [Подробнее о клиенте](docs/farm_client.md)
+    [More details](docs/en/farm_client.md)
 
-3. **Сервер фермы** &mdash; это утилита, которая собирает флаги от клиентов фермы, следит за использованием квот, централизованно отправляет флаги в проверяющую систему и показывает статистику по принятым и некорректным флагам. Настраивается и запускается админом команды в начале соревнования. Во время соревнования члены команды могут воспользоваться веб-интерфейсом сервера (см. скриншот выше), чтобы следить за результатами работы эксплоитов и статистикой отправляемых флагов.
+3. A **farm server** is a tool that collects flags from farm clients, sends them to the checksystem, monitors the usage of quotas and shows the stats about the accepted and rejected flags. It is being configured and run by a team's admin in the beginning of the competition. After that, team members can use its web interface (see the screenshot above) to watch the exploits' results and stats.
 
-    Сервер представляет собой веб-сервис (на Flask) из папки [server](server) в данном репозитории.
+    The server is a Flask web service from the [server](server) directory of this repository.
 
-    [Подробнее о сервере](docs/farm_server.md)
+    [More details](docs/en/farm_client.md)
 
 <p align="center">
     <img src="https://github.com/borzunov/DestructiveFarm/blob/master/docs/images/diagram.png" width="500"><br><br>
-    <i>Стрелки на диаграмме указывают направление движения флагов</i>
+    <i>The arrows display the flow of the flags</i>
 </p>
 
-## Планы на будущее
+## Future plans
 
-См. список по [ссылке](https://github.com/borzunov/DestructiveFarm/issues/1).
+See [here](https://github.com/borzunov/DestructiveFarm/issues/1).
 
-## Другие фермы
+## Alternatives
 
-- [Ферма](https://github.com/alexbers/exploit_farm) Бэя &mdash; более простая ферма, архитектура и некоторые детали реализации которой были заимствованы в этом репозитории. В ферме Бэя используется такой же формат эксплоита и тоже есть деление на клиент (*start_sploit.py*) и сервер (*start_posting.py*). Однако, у Бэя они должны быть запущены на одном компьютере (в [FAQ](docs/faq.md) объясняется, почему это неудобно), а сервер не предоставляет веб-интерфейс для просмотра статистики (и ряд других функций).
+- The [Bay's farm](https://github.com/alexbers/exploit_farm) is a simpler farm whose architecture and some implementation details were adopted in this project. It uses the same exploit format and also divided to a client (*start_sploit.py*) and a server (*start_posting.py*). However, it requires them to be run on the same computer (see the [FAQ](docs/en/faq.md) on why it's bad), and the server doesn't have a web interface.
 
-- [Ферма](https://github.com/andgein/ctf-exploit-farm) Андрея Гейна &mdash; ферма, решающая проблему с большим количеством процессов при большом количестве команд с помощью асинхронного сетевого взаимодействия (asyncio).
+- The [Andrew Gein's farm](https://github.com/andgein/ctf-exploit-farm) solves the issue of the large number of processes (in case of the large number of teams) using asynchronous networking (asyncio).
 
-## Авторы
+## Authors
 
-Copyright &copy; 2017, 2018 Александр Борзунов (команда &laquo;Destructive Voice&raquo;)
+Copyright &copy; 2017&ndash;2018 Aleksandr Borzunov ("Destructive Voice" team)
 
-Архитектура и некоторые детали реализации заимствованы из [фермы](https://github.com/alexbers/exploit_farm) Бэя (Александра Берсенева).
+Inspired by the [Bay's farm](https://github.com/alexbers/exploit_farm).
