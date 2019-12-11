@@ -32,7 +32,7 @@ Destructive Farm
     [Подробнее о сервере](farm_server.md)
 
 <p align="center">
-    <img src="https://github.com/borzunov/DestructiveFarm/blob/master/docs/images/diagram.png" width="500"><br><br>
+    <img src="https://github.com/borzunov/DestructiveFarm/blob/master/docs/images/diagram_ru.png" width="500"><br><br>
     <i>Стрелки на диаграмме указывают направление движения флагов</i>
 </p>
 

@@ -32,7 +32,7 @@ Read the [FAQ](docs/en/faq.md) if you want to know what are attack-defense CTFs,
     [More details](docs/en/farm_server.md)
 
 <p align="center">
-    <img src="https://github.com/borzunov/DestructiveFarm/blob/master/docs/images/diagram.png" width="500"><br><br>
+    <img src="https://github.com/borzunov/DestructiveFarm/blob/master/docs/images/diagram_en.png" width="500"><br><br>
     <i>The arrows display the flow of the flags</i>
 </p>
 
