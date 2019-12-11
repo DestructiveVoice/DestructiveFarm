@@ -11,7 +11,7 @@ Exploit farm for attack-defense CTF competitions
     <img src="https://github.com/borzunov/DestructiveFarm/blob/master/docs/images/farm_server_screenshot.png" width="700">
 </p>
 
-Read the [FAQ](docs/en/faq.md) if you want to know what are attack-defense CTFs, what features this farm has and why it has the architecture described below.
+Read the [FAQ](docs/en/faq.md) if you want to know what attack-defense CTFs are, why you need this exploit farm for them, and why it has the architecture described below.
 
 ## Components
 
