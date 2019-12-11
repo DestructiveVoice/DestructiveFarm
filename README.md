@@ -29,14 +29,14 @@ Read the [FAQ](docs/en/faq.md) if you want to know what are attack-defense CTFs,
 
     The server is a Flask web service from the [server](server) directory of this repository.
 
-    [More details](docs/en/farm_client.md)
+    [More details](docs/en/farm_server.md)
 
 <p align="center">
     <img src="https://github.com/borzunov/DestructiveFarm/blob/master/docs/images/diagram.png" width="500"><br><br>
     <i>The arrows display the flow of the flags</i>
 </p>
 
-## Plans
+## Future Plans
 
 See the list [here](https://github.com/borzunov/DestructiveFarm/issues/1).
 

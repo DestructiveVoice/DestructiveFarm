@@ -1,0 +1,1 @@
+**TODO:** Translate [this page](../ru/farm_client.md) from Russian.
