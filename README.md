@@ -25,7 +25,7 @@ Read the [FAQ](docs/en/faq.md) if you want to know what attack-defense CTFs are,
 
     [More details](docs/en/farm_client.md)
 
-3. A **farm server** is a tool that collects flags from farm clients, sends them to the checksystem, monitors the usage of quotas and shows the stats about the accepted and rejected flags. It is being configured and run by a team's admin at the start of the competition. After that, team members can use its web interface (see the screenshot above) to watch the exploits' results and stats.
+3. A **farm server** is a tool that collects flags from farm clients, sends them to the checksystem, monitors the usage of quotas and shows the stats about the accepted and rejected flags. It is being configured and run by a team's admin at the start of the competition. After that, team members can use a web interface (see the screenshot above) to watch the exploits' results and stats.
 
     The server is a Flask web service from the [server](server) directory of this repository.
 

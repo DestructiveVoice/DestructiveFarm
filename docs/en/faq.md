@@ -17,7 +17,7 @@ FAQ
     - Periodically restarts exploits for every adversarial team (while not overloading a computer with a large number of processes)
     - Kills exploit processes when they freeze
     - Watches a checksystem quota for sending flags
-    - Protects from [flag spamming](farm_server.md#Protecting-from-flag-spamming)
+    - Protects from [flag spam](farm_server.md#Flag-Spam-Protection)
     - Shows exploits' results and stats
     - Resends flags in case if the checksystem stops working for some time
 
