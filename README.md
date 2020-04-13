@@ -48,6 +48,6 @@ See the list [here](https://github.com/borzunov/DestructiveFarm/issues/1).
 
 ## Authors
 
-Copyright &copy; 2017&ndash;2018 Aleksandr Borzunov ("Destructive Voice" team)
+Copyright &copy; 2017&ndash;2018 [Aleksandr Borzunov](https://github.com/borzunov) ("Destructive Voice" team)
 
 Inspired by the [Bay's farm](https://github.com/alexbers/exploit_farm).

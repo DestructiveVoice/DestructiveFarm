@@ -27,7 +27,7 @@ Before every competition:
 
 2. Set appropriate settings in the [config.py](../../server/config.py) file (team list, flag format, flag submission protocol, checksystem quotas).
 
-    Flag submission protocols for the [Hackerdom checksystem](https://github.com/HackerDom/checksystem) (RuCTFE, RuCTF), [Themis](https://github.com/themis-project/themis-finals) (VolgaCTF), and [ForcAD](https://github.com/pomo-mondreganto/ForcAD) are supported by default. You can add your own protocols (see the [protocols](../../server/protocols) directory).
+    Flag submission protocols for the [Hackerdom checksystem](https://github.com/HackerDom/checksystem) (RuCTFE, RuCTF), [Themis](https://github.com/themis-project/themis-finals) (VolgaCTF), and [ForcAD](https://github.com/pomo-mondreganto/ForcAD) are supported by default. You can add new protocols to the [protocols](../../server/protocols) directory (feel free to make pull requests with them!).
 
 3. If other teams have access to your team's subnetwork during the competition, don't forget to change the web interface password (other teams will see all your flags otherwise).
 

@@ -43,4 +43,4 @@ FAQ
     - Exploit authors should be familiar with asyncio. If a long blocking operation happens in an exploit, the farm client won't be able to attack other teams during this time.
     - There are no asyncio-compatible libraries for rare protocols that may be used in the services (e.g. variants of RPC).
 
-    While we don't plan to support asynchronous networking, you can check out the [Andrew Gein's farm](https://github.com/andgein/ctf-exploit-farm) that uses asyncio.
+    While we don't plan to support asynchronous networking, you can check out the [Andrew Gein's farm](https://github.com/andgein/ctf-exploit-farm) that uses asyncio. It can be used independently or as a farm client sending flags to the Destructive Farm server.

@@ -48,6 +48,6 @@ Destructive Farm
 
 ## Авторы
 
-Copyright 2017&ndash;2018 Александр Борзунов (команда &laquo;Destructive Voice&raquo;)
+Copyright 2017&ndash;2018 [Александр Борзунов](https://github.com/borzunov) (команда &laquo;Destructive Voice&raquo;)
 
 Вдохновлена [фермой Бэя](https://github.com/alexbers/exploit_farm).

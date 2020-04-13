@@ -27,7 +27,7 @@ python3 -m pip install -r requirements.txt
 
 2. Указать правильные настройки в файле [config.py](../../server/config.py) (список команд, формат флага, протокол отправки флагов, квоты в проверяющей системе).
 
-    Стандартно поддерживаются протоколы для отправки флагов в проверяющую систему [Хакердома](https://github.com/HackerDom/checksystem) (RuCTFE, RuCTF), [Themis](https://github.com/themis-project/themis-finals) (VolgaCTF) и [ForcAD](https://github.com/pomo-mondreganto/ForcAD). Вы можете добавить и поддержку других протоколов (см. папку [protocols](../../server/protocols)).
+    Стандартно поддерживаются протоколы для отправки флагов в проверяющую систему [Хакердома](https://github.com/HackerDom/checksystem) (RuCTFE, RuCTF), [Themis](https://github.com/themis-project/themis-finals) (VolgaCTF) и [ForcAD](https://github.com/pomo-mondreganto/ForcAD). Вы можете добавлять новые протоколы в папку [protocols](../../server/protocols) (не стесняйтесь создавать pull request-ы с ними!).
 
 3. Если у других команд на соревновании будет доступ к подсети вашей команды, обязательно смените пароль к веб-интерфейсу сервера (иначе соперники увидят все ваши флаги).
 
