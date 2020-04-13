@@ -9,7 +9,6 @@ CONFIG = {
 
     # This configures how and where to submit flags.
     # The protocol must be a module in protocols/ directory.
-    # RuCTF(E) and VolgaCTF checksystems are supported out-of-the-box.
 
     'SYSTEM_PROTOCOL': 'ructf_tcp',
     'SYSTEM_HOST': '127.0.0.1',
@@ -21,6 +20,11 @@ CONFIG = {
 
     # 'SYSTEM_PROTOCOL': 'volgactf',
     # 'SYSTEM_HOST': '127.0.0.1',
+
+    # 'SYSTEM_PROTOCOL': 'forcad_tcp',
+    # 'SYSTEM_HOST': '127.0.0.1',
+    # 'SYSTEM_PORT': 31337,
+    # 'TEAM_TOKEN': 'your_secret_token',
 
     # The server will submit not more than SUBMIT_FLAG_LIMIT flags
     # every SUBMIT_PERIOD seconds. Flags received more than
