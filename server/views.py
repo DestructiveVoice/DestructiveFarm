@@ -48,7 +48,7 @@ def show_flags():
     for column in ['flag', 'checksystem_response']:
         value = request.form[column]
         if value:
-            conditions.append(('INSTR(LOWER({}), ?)'.format(column), value))
+            conditions.append(('INSTR(LOWER({}), ?)'.format(column), value.lower()))
     for param in ['time-since', 'time-until']:
         value = request.form[param].strip()
         if value:
