@@ -13,7 +13,7 @@ def main():
 
     text = sys.argv[1]
 
-    for url in ['http://rbc.ru', 'http://vedomosti.ru']:
+    for url in ['http://google.com', 'http://facebook.com']:
         for _ in range(3):
             text += requests.get(url).text
             time.sleep(0.1)
