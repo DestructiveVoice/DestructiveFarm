@@ -13,7 +13,7 @@ def main():
 
     text = sys.argv[1]
 
-    for url in ['http://habrahabr.ru', 'http://rbc.ru']:
+    for url in ['http://rbc.ru', 'http://vedomosti.ru']:
         for _ in range(3):
             text += requests.get(url).text
             time.sleep(0.1)
@@ -24,7 +24,7 @@ def main():
     print('Text length:', len(text))
 
     for _ in range(10):
-        text = hashlib.sha256(text.encode()).hexdigest()[:31] + '='
+        text = hashlib.sha256(text.encode()).hexdigest()[:31].upper() + '='
         print(text, flush=True)
         time.sleep(0.1)
 

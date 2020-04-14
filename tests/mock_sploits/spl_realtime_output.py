@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-It's better to process output of this sploit in real-time.
-This is a test sploit for such a functionality in the farm client.
+It is better to process output of sploits in real-time.
+This is a sploit to test such functionality in the farm client.
 For clarity, use --not-per-team mode in the client.
 """
 
@@ -12,7 +12,7 @@ import time
 
 def main():
     for i in range(10):
-        flag = hashlib.sha256(os.urandom(10)).hexdigest()[:31] + '='
+        flag = hashlib.sha256(os.urandom(10)).hexdigest()[:31].upper() + '='
         print(flag)
         # sys.stdout.flush()
         # Thanks to PYTHONUNBUFFERED=1, this sploit should work even without calling flush.
