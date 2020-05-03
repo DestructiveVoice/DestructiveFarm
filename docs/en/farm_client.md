@@ -1,4 +1,4 @@
-Farm client
+Farm Client
 ===========
 
 <p align="center">

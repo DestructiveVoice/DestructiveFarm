@@ -33,8 +33,8 @@ CONFIG = {
     'SUBMIT_PERIOD': 5,
     'FLAG_LIFETIME': 5 * 60,
 
-    # Password for the web interface. This key will be excluded from config
-    # before sending it to farm clients.
+    # Password for the web interface. You can use it with any login.
+    # This value will be excluded from the config before sending it to farm clients.
     'SERVER_PASSWORD': '1234',
 
     # Use authorization for API requests

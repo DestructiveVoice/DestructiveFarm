@@ -1,4 +1,4 @@
-Farm server
+Farm Server
 ===========
 
 <p align="center">
@@ -29,13 +29,15 @@ Before every competition:
 
     Flag submission protocols for the [Hackerdom checksystem](https://github.com/HackerDom/checksystem) (RuCTFE, RuCTF), [Themis](https://github.com/themis-project/themis-finals) (VolgaCTF), and [ForcAD](https://github.com/pomo-mondreganto/ForcAD) are supported by default. You can add new protocols to the [protocols](../../server/protocols) directory (feel free to make pull requests with them!).
 
-3. If other teams have access to your team's subnetwork during the competition, don't forget to change the web interface password (other teams will see all your flags otherwise).
+3. If other teams have access to your team's subnetwork during the competition, don't forget to change the web interface password (the `SERVER_PASSWORD` value in [config.py](../../server/config.py)). The other teams will see all your flags otherwise.
 
 To start the server, run:
 
 ```bash
 ./start_server.sh
 ```
+
+By default, you can use the password `1234` and any login to enter.
 
 ## Flag database
 
