@@ -1,4 +1,4 @@
-import re
+import regex
 import time
 from datetime import datetime
 
@@ -87,7 +87,7 @@ def show_flags():
 @auth.auth_required
 def post_flags_manual():
     config = reloader.get_config()
-    flags = re.findall(config['FLAG_FORMAT'], request.form['text'])
+    flags = regex.findall(config['FLAG_FORMAT'], request.form['text'])
 
     cur_time = round(time.time())
     rows = [(item, 'Manual', '*', cur_time, FlagStatus.QUEUED.name)

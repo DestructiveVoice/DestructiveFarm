@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import random
-import re
+import regex
 import stat
 import subprocess
 import sys
@@ -117,7 +117,7 @@ def fix_args(args):
 
     if args.distribute is not None:
         valid = False
-        match = re.fullmatch(r'(\d+)/(\d+)', args.distribute)
+        match = regex.fullmatch(r'(\d+)/(\d+)', args.distribute)
         if match is not None:
             k, n = (int(match.group(1)), int(match.group(2)))
             if n >= 2 and 1 <= k <= n:
@@ -141,7 +141,7 @@ def check_script_source(source):
         errors.append(
             'Please use shebang (e.g. {}) as the first line of your script'.format(
                 highlight('#!/usr/bin/env python3', [Style.FG_GREEN])))
-    if re.search(r'flush[(=]', source) is None:
+    if regex.search(r'flush[(=]', source) is None:
         errors.append(
             'Please print the newline and call {} each time after your sploit outputs flags. '
             'In Python 3, you can use {}. '
@@ -535,7 +535,7 @@ def main(args):
     for attack_no in once_in_a_period(args.attack_period):
         try:
             config = get_config(args)
-            flag_format = re.compile(config['FLAG_FORMAT'])
+            flag_format = regex.compile(config['FLAG_FORMAT'])
         except Exception as e:
             logging.error("Can't get config from the server: {}".format(repr(e)))
             if attack_no == 1:
