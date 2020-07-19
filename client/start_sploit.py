@@ -135,9 +135,9 @@ SCRIPT_EXTENSIONS = {
 }
 
 
-def check_script_source(source):
+def check_script_source(source, interpreter):
     errors = []
-    if not os_windows and source[:2] != '#!':
+    if not os_windows and not interpreter and source[:2] != '#!':
         errors.append(
             'Please use shebang (e.g. {}) as the first line of your script'.format(
                 highlight('#!/usr/bin/env python3', [Style.FG_GREEN])))
@@ -166,7 +166,7 @@ def check_sploit(args):
     if is_script:
         with open(path, 'r', errors='ignore') as f:
             source = f.read()
-        errors = check_script_source(source)
+        errors = check_script_source(source, args.interpreter)
 
         if errors:
             for message in errors:
