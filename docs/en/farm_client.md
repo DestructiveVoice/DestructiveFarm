@@ -16,7 +16,7 @@ The client requires Python 3 and OS Linux, macOS, or Windows. It does not requir
 To install the client on Linux or macOS, run:
 
 ```bash
-wget bit.ly/start_sploit_v2 -O start_sploit.py && chmod +x start_sploit.py
+wget bit.ly/start_sploit_v4 -O start_sploit.py && chmod +x start_sploit.py
 ```
 
 The simplest way to run an exploit is:

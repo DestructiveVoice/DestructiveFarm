@@ -16,7 +16,7 @@
 Установить клиент в Linux и macOS можно командой:
 
 ```bash
-wget bit.ly/start_sploit_v2 -O start_sploit.py && chmod +x start_sploit.py
+wget bit.ly/start_sploit_v4 -O start_sploit.py && chmod +x start_sploit.py
 ```
 
 В простейшем случае эксплоит может быть запущен следующим образом:
