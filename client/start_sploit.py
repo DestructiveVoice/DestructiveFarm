@@ -82,7 +82,7 @@ def parse_args():
     parser.add_argument('-u', '--server-url', metavar='URL',
                         default='http://farm.kolambda.com:5000',
                         help='Server URL')
-    parser.add_argument('--token', metavar='TOKEN', default='',
+    parser.add_argument('--token', metavar='TOKEN',
                         help='Farm authorization token')
     parser.add_argument('--interpreter', metavar='COMMAND',
                         help='Explicitly specify sploit interpreter (use on Windows, which doesn\'t '
@@ -237,7 +237,7 @@ SERVER_TIMEOUT = 5
 
 def get_config(args):
     req = Request(urljoin(args.server_url, '/api/get_config'))
-    if args.token:
+    if args.token is not None:
         req.add_header('X-Token', args.token)
     with urlopen(req, timeout=SERVER_TIMEOUT) as conn:
         if conn.status != 200:
@@ -253,7 +253,7 @@ def post_flags(args, flags):
 
     req = Request(urljoin(args.server_url, '/api/post_flags'))
     req.add_header('Content-Type', 'application/json')
-    if args.token:
+    if args.token is not None:
         req.add_header('X-Token', args.token)
     with urlopen(req, data=json.dumps(data).encode(), timeout=SERVER_TIMEOUT) as conn:
         if conn.status != 200:
