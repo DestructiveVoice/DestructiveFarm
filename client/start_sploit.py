@@ -79,7 +79,8 @@ def parse_args():
 
     parser.add_argument('sploit',
                         help="Sploit executable (should take a victim's host as the first argument)")
-    parser.add_argument('--server-url', metavar='URL', default='http://farm.kolambda.com:5000',
+    parser.add_argument('-u', '--server-url', metavar='URL',
+                        default='http://farm.kolambda.com:5000',
                         help='Server URL')
     parser.add_argument('--token', metavar='TOKEN', default='',
                         help='Farm authorization token')

@@ -22,12 +22,12 @@ wget bit.ly/start_sploit_v2 -O start_sploit.py && chmod +x start_sploit.py
 The simplest way to run an exploit is:
 
 ```bash
-./start_sploit.py sploit.py --server-url http://10.0.0.1:5000
+./start_sploit.py sploit.py -u http://10.0.0.1:5000
 ```
 
 Here, `sploit.py` is the exploit file, `http://10.0.0.1:5000` is the [farm server](farm_server.md) address.
 
-You can watch the exploits' results and stats using the farm client output or the server web interface, which is available at the address from `--server-url` option.
+You can watch the exploits' results and stats using the farm client output or the server web interface, which is available at the address from `-u` option.
 
 ## Details of the Algorithm
 
@@ -63,7 +63,7 @@ At the end of each attack, the client shows a percentage of exploit processes ex
 
 ## Farm Server Autodiscover
 
-To save your team members from specifying `--server-url URL` each time, you can change the [default domain](../../client/start_sploit.py#L82) of the server to a domain you control, and ask the team members to use the updated script.
+To save your team members from specifying `-u URL` each time, you can change the [default domain](../../client/start_sploit.py#L82) of the server to a domain you control, and ask the team members to use the updated script.
 
 When a competition starts, a team's admin can change the A record for the domain, so it will point to the IP address of the farm server in the local network. Note that the corresponding A records must have a small TTL (the changes will be applied with a delay otherwise).
 
