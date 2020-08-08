@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+import sys
+
+assert sys.version_info >= (3, 4), 'Python < 3.4 is not supported'
+
 import argparse
 import binascii
 import itertools
@@ -10,7 +14,6 @@ import random
 import re
 import stat
 import subprocess
-import sys
 import time
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -19,10 +22,6 @@ from math import ceil
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
-
-if sys.version_info < (3, 4):
-    logging.critical('Support of Python < 3.4 is not implemented yet')
-    sys.exit(1)
 
 os_windows = (os.name == 'nt')
 
