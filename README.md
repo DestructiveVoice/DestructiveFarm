@@ -17,7 +17,7 @@ Read the [FAQ](docs/en/faq.md) if you want to know what attack-defense CTFs are,
 
 1. An **exploit** is a script that steals flags from some service of other teams. It is written by a participant during the competition and should accept the victim's host (IP address or domain) as the first command-line argument, attack them and print flags to stdout.
 
-    [Example](client/spl_example_runme.py) | [More details](docs/en/exploit_format.md)
+    [Example](client/spl_example.py) | [More details](docs/en/exploit_format.md)
 
 2. A **farm client** is a tool that periodically runs exploits to attack other teams and looks after their work. It is being run by a participant on their laptop after they've written an exploit.
 
