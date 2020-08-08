@@ -40,14 +40,8 @@ Destructive Farm
 
 См. список по [ссылке](https://github.com/borzunov/DestructiveFarm/issues/1).
 
-## Другие фермы
-
-- [Ферма](https://github.com/alexbers/exploit_farm) Бэя &mdash; более простая ферма, архитектура и некоторые детали реализации которой были заимствованы в этом репозитории. В ферме Бэя используется такой же формат эксплоита и тоже есть деление на клиент (*start_sploit.py*) и сервер (*start_posting.py*). Однако, у Бэя они должны быть запущены на одном компьютере (в [FAQ](faq.md) объясняется, почему это неудобно), а сервер не предоставляет веб-интерфейс.
-
-- [Ферма](https://github.com/andgein/ctf-exploit-farm) Андрея Гейна &mdash; ферма, решающая проблему с большим количеством процессов при большом количестве команд с помощью asyncio.
-
 ## Авторы
 
-Copyright 2017&ndash;2018 [Александр Борзунов](https://github.com/borzunov) (команда &laquo;Destructive Voice&raquo;)
+Copyright 2017&ndash;2018 [Александр Борзунов](https://github.com/borzunov)
 
 Вдохновлена [фермой Бэя](https://github.com/alexbers/exploit_farm).

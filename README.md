@@ -40,14 +40,8 @@ Read the [FAQ](docs/en/faq.md) if you want to know what attack-defense CTFs are,
 
 See the list [here](https://github.com/borzunov/DestructiveFarm/issues/1).
 
-## Alternatives
-
-- The [Bay's farm](https://github.com/alexbers/exploit_farm) is a simpler farm whose architecture and some implementation details were adopted in this project. It uses the same exploit format and also divided into a client (*start_sploit.py*) and a server (*start_posting.py*). However, it requires them to be run on the same computer (see the [FAQ](docs/en/faq.md) on why it's bad), and the server doesn't have a web interface.
-
-- The [Andrew Gein's farm](https://github.com/andgein/ctf-exploit-farm) solves the issue of a large number of processes (in case of a large number of teams) using asyncio.
-
 ## Authors
 
-Copyright &copy; 2017&ndash;2018 [Aleksandr Borzunov](https://github.com/borzunov) ("Destructive Voice" team)
+Copyright &copy; 2017&ndash;2018 [Aleksandr Borzunov](https://github.com/borzunov)
 
 Inspired by the [Bay's farm](https://github.com/alexbers/exploit_farm).
