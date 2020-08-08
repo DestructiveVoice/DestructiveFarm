@@ -294,9 +294,9 @@ class FlagStorage:
                     self._flags_seen.add(item)
                     self._queue.append({'flag': item, 'team': team_name})
 
-    def pick_flags(self, count):
+    def pick_flags(self):
         with self._lock:
-            return self._queue[:count]
+            return self._queue[:]
 
     def mark_as_sent(self, count):
         with self._lock:
@@ -312,14 +312,12 @@ flag_storage = FlagStorage()
 
 
 POST_PERIOD = 5
-POST_FLAG_LIMIT = 10000
-# TODO: test that 10k flags won't lead to the hangup of the farm server
 
 
 def run_post_loop(args):
     try:
         for _ in once_in_a_period(POST_PERIOD):
-            flags_to_post = flag_storage.pick_flags(POST_FLAG_LIMIT)
+            flags_to_post = flag_storage.pick_flags()
 
             if flags_to_post:
                 try:
