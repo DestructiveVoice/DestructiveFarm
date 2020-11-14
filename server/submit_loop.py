@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import importlib
 import random
 import time
@@ -85,3 +87,7 @@ def run_loop():
         submit_spent = time.time() - submit_start_time
         if config['SUBMIT_PERIOD'] > submit_spent:
             time.sleep(config['SUBMIT_PERIOD'] - submit_spent)
+
+
+if __name__ == "__main__":
+    run_loop()
