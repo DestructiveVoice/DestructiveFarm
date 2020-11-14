@@ -11,5 +11,4 @@ for handler in app.logger.handlers:
 
 
 import server.api
-import server.submit_loop
 import server.views
