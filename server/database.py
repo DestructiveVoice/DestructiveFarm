@@ -11,7 +11,12 @@ from flask import g
 from server import app
 
 
-db_filename = os.path.join(os.path.dirname(__file__), 'flags.sqlite')
+schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
+
+if "FLAGS_DATABASE" in os.environ:
+    db_filename = os.environ["FLAGS_DATABASE"]
+else:
+    db_filename = os.path.join(os.path.dirname(__file__), 'flags.sqlite')
 
 
 _init_started = False
@@ -20,7 +25,7 @@ _init_lock = threading.RLock()
 
 def _init(database):
     app.logger.info('Creating database schema')
-    with app.open_resource('schema.sql', 'r') as f:
+    with app.open_resource(schema_path, 'r') as f:
         database.executescript(f.read())
 
 
