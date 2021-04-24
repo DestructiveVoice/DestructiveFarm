@@ -2,7 +2,17 @@ version: "3.7"
 
 services:
   farm:
-    container_name: destructive_farm
-    build: .
+    image: ghcr.io/vaiton/destructivefarm:slim
+    build: 
+      context: .
+      dockerfile: Dockerfile
     ports: 
       - 127.0.0.1:5000:5000
+    
+  # farm_lite:
+  #   image: ghcr.io/vaiton/destructivefarm:alpine
+  #   build: 
+  #     context: .
+  #     dockerfile: Dockerfile.alpine
+  #   ports: 
+  #     - 127.0.0.1:5000:5000

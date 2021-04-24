@@ -1,0 +1,9 @@
+FROM python:3-alpine
+
+WORKDIR /server
+COPY ./server ./
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+ENTRYPOINT [ "./start_server.sh" ]
+

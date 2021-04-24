@@ -1,8 +1,9 @@
-FROM python:3
+FROM python:3-slim
 
 WORKDIR /server
-ADD ./server/ ./
+COPY ./server/ ./
 
 RUN pip3 install -r requirements.txt 
 
 ENTRYPOINT [ "./start_server.sh" ]
+
