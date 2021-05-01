@@ -118,11 +118,13 @@
             </div>
         </div>
 
-        <div class="card border-light">
-            
+        <div class="card border-light mb-3">
+
             <div class="card-body">
-                <h4 class="card-title">Sploits graph</div>
+                <h4 class="card-title">Sploits graph</h4>
+                <canvas id="flag-graph"></canvas>
             </div>
+        </div>
 
         <div class="mb-3 text-center query-status"></div>
 
@@ -149,7 +151,10 @@
         </div>
     </div>
 
-    <script src="/static/js/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.2.0/dist/chart.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@next/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script src="/static/js/ui.js"></script>
 
 </body>

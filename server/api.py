@@ -11,8 +11,11 @@ from server.spam import is_spam_flag
 @auth.api_auth_required
 def get_config():
     config = reloader.get_config()
-    return jsonify({key: value for key, value in config.items()
-                    if 'PASSWORD' not in key and 'TOKEN' not in key})
+    return jsonify({
+        key: value
+        for key, value in config.items()
+        if 'PASSWORD' not in key and 'TOKEN' not in key
+    })
 
 
 @app.route('/api/post_flags', methods=['POST'])
@@ -22,12 +25,24 @@ def post_flags():
     flags = [item for item in flags if not is_spam_flag(item['flag'])]
 
     cur_time = round(time.time())
-    rows = [(item['flag'], item['sploit'], item['team'], cur_time, FlagStatus.QUEUED.name)
-            for item in flags]
+    rows = [(item['flag'], item['sploit'], item['team'], cur_time,
+             FlagStatus.QUEUED.name) for item in flags]
 
     db = database.get()
-    db.executemany("INSERT OR IGNORE INTO flags (flag, sploit, team, time, status) "
-                   "VALUES (?, ?, ?, ?, ?)", rows)
+    db.executemany(
+        "INSERT OR IGNORE INTO flags (flag, sploit, team, time, status) "
+        "VALUES (?, ?, ?, ?, ?)", rows)
     db.commit()
 
     return ''
+
+@app.route('/api/get_flags_by_exploit')
+@auth.api_auth_required
+def get_flags():
+    status = request.args.get('status')
+
+    rows = database.query(
+        "SELECT sploit, COUNT(*) as n FROM flags WHERE status = ? ORDER BY time DESC",
+        [status])
+
+    return jsonify([dict(res) for res in rows])

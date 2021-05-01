@@ -50,13 +50,13 @@ function generatePaginator(totalCount, rowsPerPage, pageNumber) {
         var extraClasses = (i === pageNumber ? "active" : "");
         html += '<li class="page-item ' + extraClasses + '">' +
             '<a class="page-link" href="#" data-content="' + i + '">' + i + '</a>' +
-        '</li>';
+            '</li>';
     }
 
     if (lastShown < totalPages)
         html += '<li class="page-item">' +
             '<a class="page-link" href="#" data-content="' + totalPages + '">»</a>' +
-        '</li>';
+            '</li>';
     return html;
 }
 
@@ -116,7 +116,7 @@ function postFlagsManual() {
             sploitSelect.val('Manual');
 
             $('#team-select, #flag-input, #time-since-input, #time-until-input, ' +
-              '#status-select, #checksystem-response-input').val('');
+                '#status-select, #checksystem-response-input').val('');
 
             queryInProgress = false;
             showFlags();
@@ -127,7 +127,54 @@ function postFlagsManual() {
         });
 }
 
-$(function () {
+let GRAPH_CONFIG = {
+    type: 'line',
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top',
+            },
+            title: {
+                display: false,
+            }
+        },
+        scales: {
+            x: {
+                type: "time"
+            },
+            y: {
+                type: "logarithmic"
+            }
+        }
+    },
+};
+function updateGraph(chart) {
+    fetch(`/api/get_flags_by_exploit?status=QUEUED`).then(resp => resp.json()).then(json => {
+        if (json.length == 0) return;
+
+        json.forEach(sploit => {
+            let index = chart.data.datasets.findIndex(el => el.label == sploit.sploit)
+            if (index != -1) {
+                chart.data.datasets[index].data.push({ x: Date.now(), y: sploit.n })
+            } else {
+                chart.data.datasets.push({
+                    borderColor: 'hsla(' + (Math.random() * 360) + ', 100%, 50%, 1)',
+                    fill: false,
+
+                    label: sploit.sploit,
+                    data: [{ x: Date.now(), y: sploit.n }],
+                });
+            }
+        })
+
+        chart.update()
+    });
+    setTimeout(() => updateGraph(chart), 5000)
+}
+
+
+$(() => {
     showFlags();
 
     $('#show-flags-form').submit(function (event) {
@@ -141,4 +188,9 @@ $(function () {
 
         postFlagsManual();
     });
+    
+    var ctx = document.getElementById('flag-graph').getContext('2d');
+    var chart = new Chart(ctx, GRAPH_CONFIG)
+
+    updateGraph(chart)
 });
