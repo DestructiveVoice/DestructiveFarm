@@ -17,8 +17,9 @@ def timestamp_to_datetime(s):
 @auth.auth_required
 def index():
     distinct_values = {}
-    for column in ['sploit', 'status', 'team']:
-        rows = database.query('SELECT DISTINCT {} FROM flags ORDER BY {}'.format(column, column))
+    for column in ['sploit', 'status']:
+        rows = database.query(
+            'SELECT DISTINCT {} FROM flags ORDER BY {}'.format(column, column))
         distinct_values[column] = [item[column] for item in rows]
 
     config = reloader.get_config()
@@ -30,7 +31,8 @@ def index():
     return render_template('index.html',
                            flag_format=config['FLAG_FORMAT'],
                            distinct_values=distinct_values,
-                           server_tz_name=server_tz_name)
+                           server_tz_name=server_tz_name,
+                           teams=config['TEAMS'])
 
 
 FORM_DATETIME_FORMAT = '%Y-%m-%d %H:%M'
@@ -41,20 +43,26 @@ FLAGS_PER_PAGE = 30
 @auth.auth_required
 def show_flags():
     conditions = []
-    for column in ['sploit', 'status', 'team']:
+
+    for column in ['sploit', 'status']:
         value = request.form[column]
         if value:
             conditions.append(('{} = ?'.format(column), value))
+
     for column in ['flag', 'checksystem_response']:
         value = request.form[column]
         if value:
-            conditions.append(('INSTR(LOWER({}), ?)'.format(column), value.lower()))
+            conditions.append(
+                ('INSTR(LOWER({}), ?)'.format(column), value.lower()))
+
     for param in ['time-since', 'time-until']:
         value = request.form[param].strip()
         if value:
-            timestamp = round(datetime.strptime(value, FORM_DATETIME_FORMAT).timestamp())
+            timestamp = round(
+                datetime.strptime(value, FORM_DATETIME_FORMAT).timestamp())
             sign = '>=' if param == 'time-since' else '<='
             conditions.append(('time {} ?'.format(sign), timestamp))
+
     page_number = int(request.form['page-number'])
     if page_number < 1:
         raise ValueError('Invalid page-number')
@@ -67,17 +75,31 @@ def show_flags():
         conditions_sql = ''
         conditions_args = []
 
-    sql = 'SELECT * FROM flags ' + conditions_sql + ' ORDER BY time DESC LIMIT ? OFFSET ?'
-    args = conditions_args + [FLAGS_PER_PAGE, FLAGS_PER_PAGE * (page_number - 1)]
+    teams = [
+        f"'{team}'" for team in request.form.getlist('team') if team != ""
+    ]
+    teams_sql = ""
+    if len(teams) != 0:
+        if conditions_sql != '':
+            teams_sql += "AND "
+        else:
+            teams_sql += "WHERE "
+        teams_sql += f"team IN ({','.join(teams)})"
+
+    sql = 'SELECT * FROM flags ' + conditions_sql + teams_sql + ' ORDER BY time DESC LIMIT ? OFFSET ?'
+
+    args = conditions_args + [
+        FLAGS_PER_PAGE, FLAGS_PER_PAGE * (page_number - 1)
+    ]
+
     flags = database.query(sql, args)
 
-    sql = 'SELECT COUNT(*) FROM flags ' + conditions_sql
+    sql = 'SELECT COUNT(*) FROM flags ' + conditions_sql + teams_sql
     args = conditions_args
     total_count = database.query(sql, args)[0][0]
 
     return jsonify({
         'rows': [dict(item) for item in flags],
-
         'rows_per_page': FLAGS_PER_PAGE,
         'total_count': total_count,
     })
@@ -94,8 +116,9 @@ def post_flags_manual():
             for item in flags]
 
     db = database.get()
-    db.executemany("INSERT OR IGNORE INTO flags (flag, sploit, team, time, status) "
-                   "VALUES (?, ?, ?, ?, ?)", rows)
+    db.executemany(
+        "INSERT OR IGNORE INTO flags (flag, sploit, team, time, status) "
+        "VALUES (?, ?, ?, ?, ?)", rows)
     db.commit()
 
     return ''
