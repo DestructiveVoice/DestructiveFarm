@@ -14,5 +14,7 @@ services:
   #   build: 
   #     context: .
   #     dockerfile: Dockerfile.alpine
+  #   volumes:
+  #     - ./server/flags.sqlite:/server/flags.sqlite
   #   ports: 
   #     - 127.0.0.1:5000:5000

@@ -1,9 +1,11 @@
 FROM python:3-alpine
 
 WORKDIR /server
-COPY ./server ./
+COPY ./server/requirements.txt ./requirements.txt
 
 RUN pip install --no-cache-dir -r requirements.txt
+
+COPY ./server ./
 
 ENTRYPOINT [ "./start_server.sh" ]
 
