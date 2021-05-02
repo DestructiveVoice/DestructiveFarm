@@ -1,6 +1,7 @@
 import time
 
-from flask import request, jsonify
+from flask import request, jsonify, Response
+import json
 
 from server import app, auth, database, reloader
 from server.models import FlagStatus
@@ -36,13 +37,22 @@ def post_flags():
 
     return ''
 
-@app.route('/api/get_flags_by_exploit')
+
+@app.route('/api/graphstream')
 @auth.api_auth_required
 def get_flags():
-    status = request.args.get('status')
+    # FIXME
+    status = "SKIPPED"
 
-    rows = database.query(
-        "SELECT sploit, COUNT(*) as n FROM flags WHERE status = ? ORDER BY time DESC",
-        [status])
+    def update():
+        with app.app_context():
+            while True:
+                rows = database.query(
+                    "SELECT sploit, COUNT(*) as n FROM flags WHERE status = ? ORDER BY time DESC",
+                    [status])
+                resp = f"data: {json.dumps([dict(res) for res in rows])}\n\n"
+                yield resp
+                time.sleep(5)
+        
 
-    return jsonify([dict(res) for res in rows])
+    return Response(update(), mimetype="text/event-stream")

@@ -76,16 +76,20 @@ function showFlags() {
     queryInProgress = true;
 
     $('.search-results').hide();
-    $('.query-status').html('Loading...').show();
+    $('.query-status').html(`
+        <div class="progress">
+            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 75%"></div>
+        </div>
+    `).show();
 
     $.post('/ui/show_flags', $('#show-flags-form').serialize())
-        .done(function (response) {
+        .done((response) => {
             $('.search-results tbody').html(generateFlagTableRows(response.rows));
 
             $('.search-results .total-count').text(response.total_count);
             $('.search-results .pagination').html(generatePaginator(
                 response.total_count, response.rows_per_page, getPageNumber()));
-            $('.search-results .page-link').click(function (event) {
+            $('.search-results .page-link').click((event) => {
                 event.preventDefault();
 
                 setPageNumber($(this).data("content"));
@@ -95,10 +99,14 @@ function showFlags() {
             $('.query-status').hide();
             $('.search-results').show();
         })
-        .fail(function () {
-            $('.query-status').html("Failed to load flags from the farm server");
+        .fail(() => {
+            $('.query-status').html(`
+                <div class="alert alert-danger" role="alert">
+                    Failed to load flags from the farm server
+                </div>`
+            );
         })
-        .always(function () {
+        .always(() => {
             queryInProgress = false;
         });
 }
@@ -150,7 +158,10 @@ let GRAPH_CONFIG = {
     },
 };
 function updateGraph(chart) {
-    fetch(`/api/get_flags_by_exploit?status=QUEUED`).then(resp => resp.json()).then(json => {
+    let sse = new EventSource("/api/graphstream")
+
+    sse.onmessage = (resp) => {
+        let json = JSON.parse(resp.data);
         if (json.length == 0) return;
 
         json.forEach(sploit => {
@@ -169,8 +180,7 @@ function updateGraph(chart) {
         })
 
         chart.update()
-    });
-    setTimeout(() => updateGraph(chart), 5000)
+    };
 }
 
 
@@ -188,7 +198,7 @@ $(() => {
 
         postFlagsManual();
     });
-    
+
     var ctx = document.getElementById('flag-graph').getContext('2d');
     var chart = new Chart(ctx, GRAPH_CONFIG)
 
