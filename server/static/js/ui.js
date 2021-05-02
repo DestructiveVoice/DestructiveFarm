@@ -179,21 +179,25 @@ function updateGraph(chart) {
 
         let now = Date.now()
 
-        for (sploit in json) {
-            let index = chart.data.datasets.findIndex(el => el.label == sploit)
-            let n = json[sploit]
-            if (index != -1) {
-                chart.data.datasets[index].data.push({ x: now, y: n })
-            } else {
-                chart.data.datasets.push({
-                    borderColor: 'hsla(' + (Math.random() * 360) + ', 100%, 50%, 1)',
-                    fill: false,
+        json.forEach(elem => {
+            now = elem["timestamp"]
 
-                    label: sploit,
-                    data: [{ x: now, y: n }],
-                });
+            for (sploit in elem["sploits"]) {
+                let index = chart.data.datasets.findIndex(el => el.label == sploit)
+                let n = elem["sploits"][sploit]
+                if (index != -1) {
+                    chart.data.datasets[index].data.push({ x: now, y: n })
+                } else {
+                    chart.data.datasets.push({
+                        borderColor: 'hsla(' + (Math.random() * 360) + ', 100%, 50%, 1)',
+                        fill: false,
+
+                        label: sploit,
+                        data: [{ x: now, y: n }],
+                    });
+                }
             }
-        }
+        })
 
         chart.update()
     };

@@ -1,3 +1,4 @@
+from .submit_loop import flag_ann
 import time
 
 from flask import request, jsonify, Response
@@ -37,29 +38,59 @@ def post_flags():
 
     return ''
 
-from .submit_loop import flag_ann
 
 @app.route('/api/graphstream')
 @auth.api_auth_required
 def get_flags():
+
+    def get_history(status):
+        now = time.time()
+        round_time = reloader.get_config()['SUBMIT_PERIOD']
+
+        db = database.get(context_bound=False)
+        time_start = db.execute("SELECT MIN(time) as min FROM flags",
+                                ()).fetchall()[0]["min"]
+        ret = []
+        while time_start < now:
+            elem = {"timestamp": time_start, "sploits": {}}
+            sploit_rows = db.execute("SELECT sploit, COUNT(*) as count FROM flags WHERE status = ? AND time BETWEEN ? AND ?",
+                                     (status, time_start, time_start+round_time)).fetchall()
+
+            for row in sploit_rows:
+                sploit = row["sploit"]
+                if sploit is None:
+                    break
+                count = row["count"]
+                elem["sploits"][sploit] = count
+            ret.append(elem)
+            time_start += round_time
+            break
+        # app.logger.info(ret)
+        return ret
+
     # FIXME
-    status = "QUEUED"
+    status = "ACCEPTED"
 
     # FIXME: RETURN FLAG AFTER BEING SENT
 
     def stream():
+        history = get_history(status)
+        if history:
+            yield f"data: {json.dumps(history)}\n\n"
+
         queue = flag_ann.listen()
         while True:
             flags = queue.get()
-            resp = {}
+            resp = {"timestamp": round(time.time()), "sploits": {}}
 
             for flag in flags:
-                if flag.sploit in resp:
+                if flag.sploit in resp["sploits"]:
                     continue
                 # app.logger.info(flag.status)
-                resp[flag.sploit] = sum(1 for x in flags if x.sploit == flag.sploit and x.status == status)
+                resp["sploits"][flag.sploit] = sum(
+                    1 for x in flags if x.sploit == flag.sploit and x.status == status)
+                #
 
-            yield f"data: {json.dumps(resp)}\n\n"
-        
+            yield f"data: {json.dumps([resp])}\n\n"
 
     return Response(stream(), mimetype="text/event-stream")
