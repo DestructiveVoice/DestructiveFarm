@@ -156,6 +156,16 @@ let GRAPH_CONFIG = {
         maintainAspectRatio: false,
         responsive: true,
         plugins: {
+            zoom: {
+                zoom: {
+                    enabled: true,
+                    mode: 'x',
+                },
+                pan: {
+                    enabled: true,
+                    mode: "xy"
+                }
+            },
             legend: {
                 position: 'top',
             },
