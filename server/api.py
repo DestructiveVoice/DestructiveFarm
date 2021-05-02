@@ -49,7 +49,8 @@ def get_flags():
 
         db = database.get(context_bound=False)
         time_start = db.execute("SELECT MIN(time) as min FROM flags",
-                                ()).fetchall()[0]["min"]
+                                ()).fetchone()["min"]
+        app.logger.info(time_start)
         ret = []
         while time_start < now:
             elem = {"timestamp": time_start, "sploits": {}}
@@ -64,7 +65,6 @@ def get_flags():
                 elem["sploits"][sploit] = count
             ret.append(elem)
             time_start += round_time
-            break
         # app.logger.info(ret)
         return ret
 

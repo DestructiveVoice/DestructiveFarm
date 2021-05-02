@@ -143,7 +143,7 @@ let GRAPH_CONFIG = {
             zoom: {
                 zoom: {
                     enabled: true,
-                    mode: 'x',
+                    mode: 'xy',
                 },
                 pan: {
                     enabled: true,
@@ -177,7 +177,7 @@ function updateGraph(chart) {
         let json = JSON.parse(resp.data);
         if (json.length == 0) return;
 
-        let now = Date.now()
+        //let now = Date.now()
 
         json.forEach(elem => {
             now = elem["timestamp"]
