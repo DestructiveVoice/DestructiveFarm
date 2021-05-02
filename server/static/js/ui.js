@@ -1,42 +1,25 @@
-function padLeft(s, length) {
-    s = s.toString();
-    while (s.length < length)
-        s = '0' + s;
-    return s;
-}
-
-function dateToString(date) {
-    return padLeft(date.getFullYear(), 4) + '-' + padLeft(date.getMonth() + 1, 2) + '-' +
-        padLeft(date.getDate(), 2) + ' ' +
-        padLeft(date.getHours(), 2) + ':' + padLeft(date.getMinutes(), 2) + ':' +
-        padLeft(date.getSeconds(), 2);
-}
-
-function escapeHtml(text) {
-    return $('<div>').text(text).html();
-}
-
 function generateFlagTableRows(rows) {
-    var html = '';
+    let dateFormat = new Intl.DateTimeFormat('it-IT', { dateStyle: "short", timeStyle: "long" })
+    let html = '';
     let STATUSES = {
         "QUEUED": "bi-clock-fill text-warning",
         "ACCEPTED": "bi-check-circle-fill text-success",
         "REJECTED": "bi-x-circle-fill text-danger",
         "SKIPPED": "bi-skip-forward-circle-fill text-info"
     };
-    rows.forEach(function (item) {
+    rows.forEach(item => {
 
-        var cells = [
+        let cells = [
             item.sploit,
             item.team !== null ? item.team : '',
             item.flag,
-            dateToString(new Date(item.time * 1000)),
+            dateFormat.format(new Date(item.time * 1000)),
             `<i class="bi ${STATUSES[item.status]}"></i>`,
-            item.checksystem_response !== null ? item.checksystem_response : ''
+            item.checksystem_response !== null ? item.checksystem_response : '',
         ];
 
         html += '<tr>';
-        cells.forEach(function (text) {
+        cells.forEach(text => {
             html += `<td>${text}</td>`;
         });
         html += '</tr>';
@@ -45,25 +28,25 @@ function generateFlagTableRows(rows) {
 }
 
 function generatePaginator(totalCount, rowsPerPage, pageNumber) {
-    var totalPages = Math.ceil(totalCount / rowsPerPage);
-    var firstShown = Math.max(1, pageNumber - 3);
-    var lastShown = Math.min(totalPages, pageNumber + 3);
+    let totalPages = Math.ceil(totalCount / rowsPerPage);
+    let firstShown = Math.max(1, pageNumber - 3);
+    let lastShown = Math.min(totalPages, pageNumber + 3);
 
-    var html = '';
+    let html = '';
     if (firstShown > 1)
         html += '<li class="page-item"><a class="page-link" href="#" data-content="1">«</a></li>';
 
-    for (var i = firstShown; i <= lastShown; i++) {
-        var extraClasses = (i === pageNumber ? "active" : "");
-        html += '<li class="page-item ' + extraClasses + '">' +
+    for (let i = firstShown; i <= lastShown; i++) {
+        let extraClasses = (i === pageNumber ? "active" : "");
+        html += `<li class="page-item ${extraClasses}">` +
             '<a class="page-link" href="#" data-content="' + i + '">' + i + '</a>' +
             '</li>';
     }
 
     if (lastShown < totalPages)
-        html += '<li class="page-item">' +
-            '<a class="page-link" href="#" data-content="' + totalPages + '">»</a>' +
-            '</li>';
+        html += `<li class="page-item">
+            <a class="page-link" href="#" data-content="${totalPages}">»</a> +
+        </li>`;
     return html;
 }
 
@@ -90,12 +73,13 @@ function showFlags() {
     `).show();
 
     $.post('/ui/show_flags', $('#show-flags-form').serialize())
-        .done((response) => {
+        .done(response => {
             $('.search-results tbody').html(generateFlagTableRows(response.rows));
 
             $('.search-results .total-count').text(response.total_count);
-            $('.search-results .pagination').html(generatePaginator(
-                response.total_count, response.rows_per_page, getPageNumber()));
+            $('.search-results .pagination').html(
+                generatePaginator(response.total_count, response.rows_per_page, getPageNumber())
+            );
             $('.search-results .page-link').click((event) => {
                 event.preventDefault();
 
@@ -138,7 +122,7 @@ function postFlagsManual() {
             $("#post-flags-manual-progress").hide()
             showFlags();
         })
-        .fail(function () {
+        .fail(() => {
             $('.query-status').html(`
             <div class="alert alert-danger" role="alert">
                 Failed to post flags to the farm server
@@ -146,7 +130,7 @@ function postFlagsManual() {
             `);
 
             queryInProgress = false;
-            $("#post-flags-manual-progress").hide()
+            $("#post-flags-manual-progress").hide();
         });
 }
 

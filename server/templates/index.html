@@ -29,19 +29,75 @@
             <div class="col-lg-8">
                 <div class="card border-light">
                     <div class="card-body">
+
                         <h4 class="card-title">Show Flags</h4>
+
+
                         <form id="show-flags-form">
-                            <div class="row mb-2">
-                                <div class="col-md-4">
-                                    <label for="sploit-select">Sploit</label>
-                                    <select class="form-control form-control-sm" id="sploit-select" name="sploit">
-                                        <option value="">All</option>
-                                        {% for item in distinct_values['sploit'] %}
-                                        <option>{{ item }}</option>
-                                        {% endfor %}
-                                    </select>
+                            <div class="row">
+                                <div class="col-8">
+                                    <div class="row mb-2">
+                                        <div class="col">
+                                            <label for="sploit-select">Sploit</label>
+                                            <select class="form-control form-control-sm" id="sploit-select"
+                                                name="sploit">
+                                                <option value="">All</option>
+                                                {% for item in distinct_values['sploit'] %}
+                                                <option>{{ item }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+
+                                        <div class="col">
+                                            <label for="flag-input">
+                                                Flag
+                                                <small class="text-muted ml-2">substring, case-insensitive</small>
+                                            </label>
+                                            <input type="text" class="form-control form-control-sm h-100" id="flag-input"
+                                                name="flag">
+                                        </div>
+                                    </div>
+
+
+                                    <div class="row mb-3">
+                                        <div class="col-md-3">
+                                            <label for="time-since-input">
+                                                Since
+                                                <small class="text-muted ml-2">{{ server_tz_name }}</small>
+                                            </label>
+                                            <input type="text" class="form-control form-control-sm"
+                                                id="time-since-input" name="time-since" placeholder="yyyy-mm-dd hh:mm">
+                                        </div>
+
+                                        <div class="col-md-3">
+                                            <label for="time-until-input">
+                                                Until
+                                                <small class="text-muted ml-2">{{ server_tz_name }}</small>
+                                            </label>
+                                            <input type="text" class="form-control form-control-sm"
+                                                id="time-until-input" name="time-until" placeholder="yyyy-mm-dd hh:mm">
+                                        </div>
+
+                                        <div class="col-md-2">
+                                            <label for="status-select">Status</label>
+                                            <select class="form-control form-control-sm" id="status-select"
+                                                name="status">
+                                                <option value="">All</option>
+                                                {% for item in distinct_values['status'] %}
+                                                <option>{{ item }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label for="checksystem-response-input">
+                                                Checksystem response
+                                            </label>
+                                            <input type="text" class="form-control form-control-sm"
+                                                id="checksystem-response-input" name="checksystem_response">
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-4">
                                     <label for="team-select">Team</label>
                                     <select multiple class="form-control form-control-sm" id="team-select" name="team">
                                         <option value="">All</option>
@@ -49,47 +105,6 @@
                                         <option>{{ item }}</option>
                                         {% endfor %}
                                     </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="flag-input">
-                                        Flag
-                                        <small class="text-muted ml-2">substring, case-insensitive</small>
-                                    </label>
-                                    <input type="text" class="form-control form-control-sm" id="flag-input" name="flag">
-                                </div>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label for="time-since-input">
-                                        Since
-                                        <small class="text-muted ml-2">{{ server_tz_name }}</small>
-                                    </label>
-                                    <input type="text" class="form-control form-control-sm" id="time-since-input"
-                                        name="time-since" placeholder="yyyy-mm-dd hh:mm">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="time-until-input">
-                                        Until
-                                        <small class="text-muted ml-2">{{ server_tz_name }}</small>
-                                    </label>
-                                    <input type="text" class="form-control form-control-sm" id="time-until-input"
-                                        name="time-until" placeholder="yyyy-mm-dd hh:mm">
-                                </div>
-                                <div class="col-md-2">
-                                    <label for="status-select">Status</label>
-                                    <select class="form-control form-control-sm" id="status-select" name="status">
-                                        <option value="">All</option>
-                                        {% for item in distinct_values['status'] %}
-                                        <option>{{ item }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="checksystem-response-input">
-                                        Checksystem response
-                                    </label>
-                                    <input type="text" class="form-control form-control-sm"
-                                        id="checksystem-response-input" name="checksystem_response">
                                 </div>
                             </div>
                             <div class="row">
@@ -165,7 +180,8 @@
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.2.0/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.0.0-beta.5/dist/chartjs-plugin-zoom.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.0.0-beta.5/dist/chartjs-plugin-zoom.min.js"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@next/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script src="/static/js/ui.js"></script>

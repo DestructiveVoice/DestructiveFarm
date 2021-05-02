@@ -19,7 +19,7 @@ def index():
     distinct_values = {}
     for column in ['sploit', 'status']:
         rows = database.query(
-            'SELECT DISTINCT {} FROM flags ORDER BY {}'.format(column, column))
+            f'SELECT DISTINCT {column} FROM flags ORDER BY {column}')
         distinct_values[column] = [item[column] for item in rows]
 
     config = reloader.get_config()
@@ -52,8 +52,7 @@ def show_flags():
     for column in ['flag', 'checksystem_response']:
         value = request.form[column]
         if value:
-            conditions.append(
-                ('INSTR(LOWER({}), ?)'.format(column), value.lower()))
+            conditions.append((f'INSTR(LOWER({column}), ?)', value.lower()))
 
     for param in ['time-since', 'time-until']:
         value = request.form[param].strip()
