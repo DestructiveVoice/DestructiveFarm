@@ -27,7 +27,7 @@ jobs:
         with:
           push: true
           tags: ghcr.io/str4ngeb0yz/destructivefarm:alpine
-          dockerfile: Dockerfile.alpine
+          file: Dockerfile.alpine
           
       - name: Image digests
         run: echo ${{ steps.docker_build.outputs.digest }}
@@ -56,7 +56,7 @@ jobs:
         with:
           push: true
           tags: ghcr.io/str4ngeb0yz/destructivefarm:latest,ghcr.io/vaiton/destructivefarm:slim
-          dockefile: Dockerfile
+          file: Dockerfile
           
       - name: Image digests
         run: echo ${{ steps.docker_build.outputs.digest }}
