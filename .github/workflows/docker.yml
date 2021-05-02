@@ -26,7 +26,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: ghcr.io/destructivefarm/caronte:alpine
+          tags: ghcr.io/vaiton/destructivefarm:alpine
           dockerfile: Dockerfile.alpine
           
       - name: Image digests
