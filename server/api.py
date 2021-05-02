@@ -37,22 +37,29 @@ def post_flags():
 
     return ''
 
+from .submit_loop import flag_ann
 
 @app.route('/api/graphstream')
 @auth.api_auth_required
 def get_flags():
     # FIXME
-    status = "SKIPPED"
+    status = "QUEUED"
 
-    def update():
-        with app.app_context():
-            while True:
-                rows = database.query(
-                    "SELECT sploit, COUNT(*) as n FROM flags WHERE status = ? ORDER BY time DESC",
-                    [status])
-                resp = f"data: {json.dumps([dict(res) for res in rows])}\n\n"
-                yield resp
-                time.sleep(5)
+    # FIXME: RETURN FLAG AFTER BEING SENT
+
+    def stream():
+        queue = flag_ann.listen()
+        while True:
+            flags = queue.get()
+            resp = {}
+
+            for flag in flags:
+                if flag.sploit in resp:
+                    continue
+                # app.logger.info(flag.status)
+                resp[flag.sploit] = sum(1 for x in flags if x.sploit == flag.sploit and x.status == status)
+
+            yield f"data: {json.dumps(resp)}\n\n"
         
 
-    return Response(update(), mimetype="text/event-stream")
+    return Response(stream(), mimetype="text/event-stream")

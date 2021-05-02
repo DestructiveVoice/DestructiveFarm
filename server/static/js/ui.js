@@ -18,19 +18,26 @@ function escapeHtml(text) {
 
 function generateFlagTableRows(rows) {
     var html = '';
+    let STATUSES = {
+        "QUEUED": "bi-clock-fill text-warning",
+        "ACCEPTED": "bi-check-circle-fill text-success",
+        "REJECTED": "bi-x-circle-fill text-danger",
+        "SKIPPED": "bi-skip-forward-circle-fill text-info"
+    };
     rows.forEach(function (item) {
+
         var cells = [
             item.sploit,
             item.team !== null ? item.team : '',
             item.flag,
             dateToString(new Date(item.time * 1000)),
-            item.status,
+            `<i class="bi ${STATUSES[item.status]}"></i>`,
             item.checksystem_response !== null ? item.checksystem_response : ''
         ];
 
         html += '<tr>';
         cells.forEach(function (text) {
-            html += '<td>' + escapeHtml(text) + '</td>';
+            html += `<td>${text}</td>`;
         });
         html += '</tr>';
     });
@@ -78,7 +85,7 @@ function showFlags() {
     $('.search-results').hide();
     $('.query-status').html(`
         <div class="progress">
-            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 75%"></div>
+            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%"></div>
         </div>
     `).show();
 
@@ -115,6 +122,7 @@ function postFlagsManual() {
     if (queryInProgress)
         return;
     queryInProgress = true;
+    $("#post-flags-manual-progress").show()
 
     $.post('/ui/post_flags_manual', $('#post-flags-manual-form').serialize())
         .done(function () {
@@ -127,17 +135,25 @@ function postFlagsManual() {
                 '#status-select, #checksystem-response-input').val('');
 
             queryInProgress = false;
+            $("#post-flags-manual-progress").hide()
             showFlags();
         })
         .fail(function () {
-            $('.query-status').html("Failed to post flags to the farm server");
+            $('.query-status').html(`
+            <div class="alert alert-danger" role="alert">
+                Failed to post flags to the farm server
+            </div>
+            `);
+
             queryInProgress = false;
+            $("#post-flags-manual-progress").hide()
         });
 }
 
 let GRAPH_CONFIG = {
     type: 'line',
     options: {
+        maintainAspectRatio: false,
         responsive: true,
         plugins: {
             legend: {
@@ -149,10 +165,13 @@ let GRAPH_CONFIG = {
         },
         scales: {
             x: {
-                type: "time"
-            },
-            y: {
-                type: "logarithmic"
+                type: "time",
+                time: {
+                    unit: 'minute',
+                    displayFormats: {
+                        minute: 'HH:mm'
+                    }
+                }
             }
         }
     },
@@ -164,20 +183,23 @@ function updateGraph(chart) {
         let json = JSON.parse(resp.data);
         if (json.length == 0) return;
 
-        json.forEach(sploit => {
-            let index = chart.data.datasets.findIndex(el => el.label == sploit.sploit)
+        let now = Date.now()
+
+        for (sploit in json) {
+            let index = chart.data.datasets.findIndex(el => el.label == sploit)
+            let n = json[sploit]
             if (index != -1) {
-                chart.data.datasets[index].data.push({ x: Date.now(), y: sploit.n })
+                chart.data.datasets[index].data.push({ x: now, y: n })
             } else {
                 chart.data.datasets.push({
                     borderColor: 'hsla(' + (Math.random() * 360) + ', 100%, 50%, 1)',
                     fill: false,
 
-                    label: sploit.sploit,
-                    data: [{ x: Date.now(), y: sploit.n }],
+                    label: sploit,
+                    data: [{ x: now, y: n }],
                 });
             }
-        })
+        }
 
         chart.update()
     };
