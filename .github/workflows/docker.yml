@@ -55,7 +55,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: ghcr.io/str4ngeb0yz/destructivefarm:latest,ghcr.io/vaiton/destructivefarm:slim
+          tags: ghcr.io/str4ngeb0yz/destructivefarm:latest,ghcr.io/str4ngeb0yz/destructivefarm:slim
           file: Dockerfile
           
       - name: Image digests
