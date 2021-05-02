@@ -2,21 +2,25 @@ version: "3.7"
 
 services:
   # farm:
-  #   image: ghcr.io/vaiton/destructivefarm:slim
+  #   image: ghcr.io/str4ngeb0yz/destructivefarm:slim
   #   build: 
   #     context: .
   #     dockerfile: Dockerfile
+  #   environment: 
+  #     - FLAGS_DATABASE=/server/db/flags.sqlite 
   #   volumes:
-  #     - ./server/flags.sqlite:/server/flags.sqlite
+  #     - ./db:/server/db
   #   ports: 
   #     - 127.0.0.1:5000:5000
     
   farm_lite:
-    image: ghcr.io/vaiton/destructivefarm:alpine
+    image: ghcr.io/str4ngeb0yz/destructivefarm:alpine
     build: 
       context: .
       dockerfile: Dockerfile.alpine
+    environment: 
+      - FLAGS_DATABASE=/server/db/flags.sqlite 
     volumes:
-      - ./server/flags.sqlite:/server/flags.sqlite
+      - ./db:/server/db
     ports: 
       - 0.0.0.0:5000:5000
