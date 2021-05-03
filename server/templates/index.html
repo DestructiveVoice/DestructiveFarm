@@ -53,7 +53,7 @@
                                                 Flag
                                                 <small class="text-muted ml-2">substring, case-insensitive</small>
                                             </label>
-                                            <input type="text" class="form-control form-control-sm h-100" id="flag-input"
+                                            <input type="text" class="form-control form-control-sm" id="flag-input"
                                                 name="flag">
                                         </div>
                                     </div>
@@ -99,7 +99,7 @@
                                 </div>
                                 <div class="col-4">
                                     <label for="team-select">Team</label>
-                                    <select multiple class="form-control form-control-sm" id="team-select" name="team">
+                                    <select multiple class="form-control form-control-sm h-100" id="team-select" name="team">
                                         <option value="">All</option>
                                         {% for item in teams %}
                                         <option>{{ item }}</option>
