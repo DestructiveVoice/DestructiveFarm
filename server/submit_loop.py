@@ -64,12 +64,19 @@ def run_loop():
     app.logger.info('Starting submit loop')
     with app.app_context():
         db = database.get(context_bound=False)
+    
+    cycle = db.execute("SELECT MAX(sent_cycle) AS last_cycle FROM flags").fetchone()['last_cycle']
+    if not cycle:
+        cycle = 0
 
     while True:
+        cycle += 1
+
         submit_start_time = time.time()
 
         config = reloader.get_config()
 
+        # If flag time > FLAG_LIFETIME set as SKIPPED
         skip_time = round(submit_start_time - config['FLAG_LIFETIME'])
         db.execute(
             "UPDATE flags SET status = ? WHERE status = ? AND time < ?",
@@ -91,22 +98,31 @@ def run_loop():
             app.logger.debug(
                 f'Submitting {len(flags)} flags (out of {len(queued_flags)} in queue)'
             )
+            # Send flags to gameserver
             results = submit_flags(flags, config)
 
-            rows = [(item.status.name, item.checksystem_response, item.flag)
+            rows = [(item.status.name, item.checksystem_response, cycle,item.flag)
                     for item in results]
             db.executemany(
                 "UPDATE flags "
-                "SET status = ?, checksystem_response = ? "
+                "SET status = ?, checksystem_response = ?, sent_cycle = ? "
                 "WHERE flag = ?", rows)
             db.commit()
 
-            flag_ann.announce(flags)
+            flags_status = {result.flag: result.status for result in results}
+            
+            def add_status(item: Flag):
+                return Flag(item.flag, item.sploit, item.team, item.time, flags_status[item.flag], item.checksystem_response, item.sent_cycle)
+
+            flags = map(add_status, flags)
+            flag_ann.announce((cycle, flags))
 
 
         submit_spent = time.time() - submit_start_time
         if config['SUBMIT_PERIOD'] > submit_spent:
             time.sleep(config['SUBMIT_PERIOD'] - submit_spent)
+
+
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+from .submit_loop import flag_ann
 import time
 
 from flask import request, jsonify, Response
@@ -37,29 +38,77 @@ def post_flags():
 
     return ''
 
-from .submit_loop import flag_ann
 
 @app.route('/api/graphstream')
 @auth.api_auth_required
 def get_flags():
+    def get_history(status):
+        db = database.get(context_bound=False)
+
+        curr_cycle = db.execute(
+            "SELECT MAX(sent_cycle) as cycle FROM flags").fetchone()["cycle"] 
+        if not curr_cycle:
+            curr_cycle = 0
+
+        ret = []
+
+        for cycle in range(curr_cycle):
+            elem = {"cycle": cycle, "sploits": {}}
+
+            sploit_rows = db.execute(
+                "SELECT sploit, COUNT(*) as n "
+                "FROM flags "
+                "WHERE status = ? AND sent_cycle = ?", (status, cycle)).fetchall()
+
+            for sploit in sploit_rows:
+                sploit_name = sploit["sploit"]
+                if sploit_name is None:
+                    continue
+
+                n = sploit['n']
+                elem['sploits'][sploit_name] = n
+            ret.append(elem)
+
+        return ret
+
     # FIXME
-    status = "QUEUED"
+    status = FlagStatus.ACCEPTED
 
     # FIXME: RETURN FLAG AFTER BEING SENT
 
     def stream():
+        history = get_history("ACCEPTED")
+        if history:
+            yield f"data: {json.dumps(history)}\n\n"
+
         queue = flag_ann.listen()
         while True:
-            flags = queue.get()
-            resp = {}
+            cycle, flags = queue.get()
+            resp = {"cycle": cycle, "sploits": {}}
+
 
             for flag in flags:
-                if flag.sploit in resp:
+                app.logger.info(flag)
+                if flag.sploit in resp["sploits"]:
                     continue
                 # app.logger.info(flag.status)
-                resp[flag.sploit] = sum(1 for x in flags if x.sploit == flag.sploit and x.status == status)
+                resp["sploits"][flag.sploit] = sum(
+                    1 for x in flags
+                    if x.sploit == flag.sploit and x.status == status)
 
-            yield f"data: {json.dumps(resp)}\n\n"
-        
+            yield f"data: {json.dumps([resp])}\n\n"
 
     return Response(stream(), mimetype="text/event-stream")
+
+
+'''
+[
+  {
+      cycle: 123123,
+      sploits: {
+          "nome_sploit": n,
+          ...
+      }
+  }
+]
+'''

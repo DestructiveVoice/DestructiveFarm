@@ -9,5 +9,6 @@ class FlagStatus(Enum):
     REJECTED = 3
 
 
-Flag = namedtuple('Flag', ['flag', 'sploit', 'team', 'time', 'status', 'checksystem_response'])
+Flag = namedtuple('Flag', ['flag', 'sploit', 'team', 'time', 'status', 'checksystem_response', 'sent_cycle'])
+
 SubmitResult = namedtuple('SubmitResult', ['flag', 'status', 'checksystem_response'])

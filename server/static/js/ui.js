@@ -143,7 +143,7 @@ let GRAPH_CONFIG = {
             zoom: {
                 zoom: {
                     enabled: true,
-                    mode: 'x',
+                    mode: 'xy',
                 },
                 pan: {
                     enabled: true,
@@ -159,44 +159,56 @@ let GRAPH_CONFIG = {
         },
         scales: {
             x: {
-                type: "time",
-                time: {
-                    unit: 'minute',
-                    displayFormats: {
-                        minute: 'HH:mm'
-                    }
-                }
+                type: "linear",
             }
         }
     },
 };
+
+var SPLOITS = new Set();
 function updateGraph(chart) {
     let sse = new EventSource("/api/graphstream")
 
     sse.onmessage = (resp) => {
-        let json = JSON.parse(resp.data);
-        if (json.length == 0) return;
+        let elements = JSON.parse(resp.data);
+        if (elements.length == 0) return;
 
-        let now = Date.now()
 
-        for (sploit in json) {
-            let index = chart.data.datasets.findIndex(el => el.label == sploit)
-            let n = json[sploit]
-            if (index != -1) {
-                chart.data.datasets[index].data.push({ x: now, y: n })
-            } else {
-                chart.data.datasets.push({
-                    borderColor: 'hsla(' + (Math.random() * 360) + ', 100%, 50%, 1)',
-                    fill: false,
+        elements.forEach(elem => {
+            let cycle = elem["cycle"];
 
-                    label: sploit,
-                    data: [{ x: now, y: n }],
-                });
+            for (sploit of new Set(Object.keys(elem["sploits"]), SPLOITS.keys()).keys()) {
+
+                let index = chart.data.datasets.findIndex(el => el.label == sploit);
+                let n = elem["sploits"][sploit] || 0;
+                console.log(cycle)
+
+                if (index != -1) {
+                    chart.data.datasets[index].data.push({ x: cycle, y: n });
+                } else {
+                    SPLOITS.add(sploit);
+                    chart.data.datasets.push({
+                        borderColor: 'hsla(' + hashCode(sploit) % 360 + ', 100%, 50%, 1)',
+                        fill: false,
+                        tension: 0.1,
+
+                        label: sploit,
+                        data: [{ x: cycle, y: n }],
+                    });
+                }
             }
-        }
+        })
 
         chart.update()
     };
+}
+
+function hashCode(str) { // java String#hashCode
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return hash;
 }
 
 
