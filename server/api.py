@@ -42,55 +42,73 @@ def post_flags():
 @app.route('/api/graphstream')
 @auth.api_auth_required
 def get_flags():
-
     def get_history(status):
-        now = time.time()
-        round_time = reloader.get_config()['SUBMIT_PERIOD']
-
         db = database.get(context_bound=False)
-        time_start = db.execute("SELECT MIN(time) as min FROM flags",
-                                ()).fetchone()["min"]
-        app.logger.info(time_start)
-        ret = []
-        while time_start < now:
-            elem = {"timestamp": time_start, "sploits": {}}
-            sploit_rows = db.execute("SELECT sploit, COUNT(*) as count FROM flags WHERE status = ? AND time BETWEEN ? AND ?",
-                                     (status, time_start, time_start+round_time)).fetchall()
 
-            for row in sploit_rows:
-                sploit = row["sploit"]
-                if sploit is None:
-                    break
-                count = row["count"]
-                elem["sploits"][sploit] = count
+        curr_cycle = db.execute(
+            "SELECT MAX(sent_cycle) as cycle FROM flags").fetchone()["cycle"] 
+        if not curr_cycle:
+            curr_cycle = 0
+
+        ret = []
+
+        for cycle in range(curr_cycle):
+            elem = {"cycle": cycle, "sploits": {}}
+
+            sploit_rows = db.execute(
+                "SELECT sploit, COUNT(*) as n "
+                "FROM flags "
+                "WHERE status = ? AND sent_cycle = ?", (status, cycle)).fetchall()
+
+            for sploit in sploit_rows:
+                sploit_name = sploit["sploit"]
+                if sploit_name is None:
+                    continue
+
+                n = sploit['n']
+                elem['sploits'][sploit_name] = n
             ret.append(elem)
-            time_start += round_time
-        # app.logger.info(ret)
+
         return ret
 
     # FIXME
-    status = "ACCEPTED"
+    status = FlagStatus.ACCEPTED
 
     # FIXME: RETURN FLAG AFTER BEING SENT
 
     def stream():
-        history = get_history(status)
+        history = get_history("ACCEPTED")
         if history:
             yield f"data: {json.dumps(history)}\n\n"
 
         queue = flag_ann.listen()
         while True:
-            flags = queue.get()
-            resp = {"timestamp": round(time.time()), "sploits": {}}
+            cycle, flags = queue.get()
+            resp = {"cycle": cycle, "sploits": {}}
+
 
             for flag in flags:
+                app.logger.info(flag)
                 if flag.sploit in resp["sploits"]:
                     continue
                 # app.logger.info(flag.status)
                 resp["sploits"][flag.sploit] = sum(
-                    1 for x in flags if x.sploit == flag.sploit and x.status == status)
-                #
+                    1 for x in flags
+                    if x.sploit == flag.sploit and x.status == status)
 
             yield f"data: {json.dumps([resp])}\n\n"
 
     return Response(stream(), mimetype="text/event-stream")
+
+
+'''
+[
+  {
+      cycle: 123123,
+      sploits: {
+          "nome_sploit": n,
+          ...
+      }
+  }
+]
+'''

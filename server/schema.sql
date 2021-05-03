@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS flags (
     team TEXT,
     time INTEGER,
     status TEXT,
-    checksystem_response TEXT
+    checksystem_response TEXT,
+    sent_cycle INTEGER
 );
 
 CREATE INDEX IF NOT EXISTS flags_sploit ON flags(sploit);

@@ -159,41 +159,41 @@ let GRAPH_CONFIG = {
         },
         scales: {
             x: {
-                type: "time",
-                time: {
-                    unit: 'minute',
-                    displayFormats: {
-                        minute: 'HH:mm'
-                    }
-                }
+                type: "linear",
             }
         }
     },
 };
+
+var SPLOITS = new Set();
 function updateGraph(chart) {
     let sse = new EventSource("/api/graphstream")
 
     sse.onmessage = (resp) => {
-        let json = JSON.parse(resp.data);
-        if (json.length == 0) return;
+        let elements = JSON.parse(resp.data);
+        if (elements.length == 0) return;
 
-        //let now = Date.now()
 
-        json.forEach(elem => {
-            now = elem["timestamp"]
+        elements.forEach(elem => {
+            let cycle = elem["cycle"];
 
-            for (sploit in elem["sploits"]) {
-                let index = chart.data.datasets.findIndex(el => el.label == sploit)
-                let n = elem["sploits"][sploit]
+            for (sploit of new Set(Object.keys(elem["sploits"]), SPLOITS.keys()).keys()) {
+
+                let index = chart.data.datasets.findIndex(el => el.label == sploit);
+                let n = elem["sploits"][sploit] || 0;
+                console.log(cycle)
+
                 if (index != -1) {
-                    chart.data.datasets[index].data.push({ x: now, y: n })
+                    chart.data.datasets[index].data.push({ x: cycle, y: n });
                 } else {
+                    SPLOITS.add(sploit);
                     chart.data.datasets.push({
-                        borderColor: 'hsla(' + (Math.random() * 360) + ', 100%, 50%, 1)',
+                        borderColor: 'hsla(' + hashCode(sploit) % 360 + ', 100%, 50%, 1)',
                         fill: false,
+                        tension: 0.1,
 
                         label: sploit,
-                        data: [{ x: now, y: n }],
+                        data: [{ x: cycle, y: n }],
                     });
                 }
             }
@@ -201,6 +201,14 @@ function updateGraph(chart) {
 
         chart.update()
     };
+}
+
+function hashCode(str) { // java String#hashCode
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return hash;
 }
 
 
