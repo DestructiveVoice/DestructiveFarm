@@ -148,6 +148,14 @@ let GRAPH_CONFIG = {
                 pan: {
                     enabled: true,
                     mode: "xy"
+                },
+                limits: {
+                    x: {
+                        min: 0
+                    },
+                    y: {
+                        min: 0
+                    }
                 }
             },
             legend: {
@@ -160,6 +168,11 @@ let GRAPH_CONFIG = {
         scales: {
             x: {
                 type: "linear",
+                min: 0
+            },
+            y: {
+                type: "linear",
+                min: 0
             }
         }
     },
