@@ -72,7 +72,7 @@ function showFlags() {
         </div>
     `).show();
 
-    $.get('/ui/show_flags?'+ $('#show-flags-form').serialize())
+    $.get('/ui/show_flags?' + $('#show-flags-form').serialize())
         .done(response => {
             $('.search-results tbody').html(generateFlagTableRows(response.rows));
 
@@ -136,6 +136,19 @@ function postFlagsManual() {
 
 let GRAPH_CONFIG = {
     type: 'bar',
+    data: {
+        datasets: [{
+            label: "Totale",
+            type: "line",
+
+            fill: true,
+            borderColor: 'hsla(120, 50%, 50%, 0.6)',
+            backgroundColor: 'hsla(120, 50%, 50%, 0.05)',
+            // tension: 0.9,
+            cubicInterpolationMode: "monotone"
+
+        }]
+    },
     options: {
         maintainAspectRatio: false,
         //responsive: true,
@@ -198,17 +211,18 @@ function updateGraph(chart) {
 
         elements.forEach(elem => {
             let cycle = elem["cycle"];
-
+            let total = 0;
             for (sploit of new Set([...Object.keys(elem["sploits"]), ...SPLOITS])) {
 
                 let index = chart.data.datasets.findIndex(el => el.label == sploit);
                 let n = elem["sploits"][sploit] || 0;
-
+                total += n;
                 if (index != -1) {
                     chart.data.datasets[index].data.push({ x: cycle, y: n });
                 } else {
                     SPLOITS.add(sploit);
                     chart.data.datasets.push({
+                        type: "bar",
                         borderColor: 'hsla(' + hashCode(sploit) % 360 + ', 50%, 50%, 1)',
                         backgroundColor: 'hsla(' + hashCode(sploit) % 360 + ', 50%, 50%, 1)',
                         fill: false,
@@ -218,6 +232,8 @@ function updateGraph(chart) {
                     });
                 }
             }
+            if (total != 0)
+                chart.data.datasets[0].data.push({ x: cycle, y: total });
         })
 
         chart.update()
