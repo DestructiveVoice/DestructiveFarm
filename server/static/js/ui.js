@@ -178,7 +178,10 @@ let GRAPH_CONFIG = {
             },
             title: {
                 display: false,
-            }
+            },
+            tooltip: {
+                enabled: false
+            },
         },
         scales: {
             x: {
@@ -225,9 +228,9 @@ function updateGraph(chart) {
                     SPLOITS.add(sploit);
                     chart.data.datasets.push({
                         type: "bar",
-                        borderColor: 'hsla(' + hashCode(sploit) % 360 + ', 50%, 50%, 1)',
-                        backgroundColor: 'hsla(' + hashCode(sploit) % 360 + ', 50%, 50%, 1)',
-                        fill: false,
+                        borderColor: 'hsla(' + hashCode(sploit) % 360 + ', 70%, 50%, 1)',
+                        backgroundColor: 'hsla(' + hashCode(sploit) % 360 + ', 70%, 50%, 0.5)',
+                        borderWidth: 1,
 
                         label: sploit,
                         data: [{ x: cycle, y: n }],
@@ -250,12 +253,13 @@ function updateGraph(chart) {
 }
 
 function hashCode(str) { // java String#hashCode
-    var hash = 0;
+    var hash = 5831;
     for (var i = 0; i < str.length; i++) {
         hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
     return hash;
 }
+
 
 
 $(() => {
