@@ -39,7 +39,7 @@ function generatePaginator(totalCount, rowsPerPage, pageNumber) {
     for (let i = firstShown; i <= lastShown; i++) {
         let extraClasses = (i === pageNumber ? "active" : "");
         html += `<li class="page-item ${extraClasses}">
-                    <a class="page-link" href="#" data-content="${i}"> ${i} </a>
+                    <a class="page-link" href="#" data-content="${i}">${i}</a>
                 </li>`;
     }
 
@@ -83,7 +83,7 @@ function showFlags() {
             $('.search-results .page-link').click((event) => {
                 event.preventDefault();
 
-                setPageNumber($(this).data("content"));
+                setPageNumber($(event.currentTargetthis).data("content"));
                 showFlags();
             });
 
@@ -109,7 +109,7 @@ function postFlagsManual() {
     $("#post-flags-manual-progress").show()
 
     $.post('/ui/post_flags_manual', $('#post-flags-manual-form').serialize())
-        .done(function () {
+        .done(() => {
             var sploitSelect = $('#sploit-select');
             if ($('#sploit-manual-option').empty())
                 sploitSelect.append($('<option id="sploit-manual-option">Manual</option>'));
@@ -119,7 +119,7 @@ function postFlagsManual() {
                 '#status-select, #checksystem-response-input').val('');
 
             queryInProgress = false;
-            $("#post-flags-manual-progress").hide()
+            $("#post-flags-manual-progress").hide();
             showFlags();
         })
         .fail(() => {

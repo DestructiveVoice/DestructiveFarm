@@ -2,7 +2,7 @@ import re
 import time
 from datetime import datetime
 
-from flask import jsonify, render_template, request
+from flask import jsonify, render_template, request, Response
 
 from server import app, auth, database, reloader
 from server.models import FlagStatus
@@ -18,8 +18,7 @@ def timestamp_to_datetime(s):
 def index():
     distinct_values = {}
     for column in ['sploit', 'status']:
-        rows = database.query(
-            f'SELECT DISTINCT {column} FROM flags ORDER BY {column}')
+        rows = database.query(f'SELECT DISTINCT {column} FROM flags ORDER BY {column}')
         distinct_values[column] = [item[column] for item in rows]
 
     config = reloader.get_config()
@@ -47,7 +46,7 @@ def show_flags():
     for column in ['sploit', 'status']:
         value = request.form[column]
         if value:
-            conditions.append(('{} = ?'.format(column), value))
+            conditions.append((f'{column} = ?', value))
 
     for column in ['flag', 'checksystem_response']:
         value = request.form[column]
@@ -60,7 +59,7 @@ def show_flags():
             timestamp = round(
                 datetime.strptime(value, FORM_DATETIME_FORMAT).timestamp())
             sign = '>=' if param == 'time-since' else '<='
-            conditions.append(('time {} ?'.format(sign), timestamp))
+            conditions.append((f'time {sign} ?', timestamp))
 
     page_number = int(request.form['page-number'])
     if page_number < 1:
@@ -85,7 +84,7 @@ def show_flags():
             teams_sql += "WHERE "
         teams_sql += f"team IN ({','.join(teams)})"
 
-    sql = 'SELECT * FROM flags ' + conditions_sql + teams_sql + ' ORDER BY time DESC LIMIT ? OFFSET ?'
+    sql = f'SELECT * FROM flags {conditions_sql} {teams_sql} ORDER BY time DESC LIMIT ? OFFSET ?'
 
     args = conditions_args + [
         FLAGS_PER_PAGE, FLAGS_PER_PAGE * (page_number - 1)
@@ -93,7 +92,7 @@ def show_flags():
 
     flags = database.query(sql, args)
 
-    sql = 'SELECT COUNT(*) FROM flags ' + conditions_sql + teams_sql
+    sql = f'SELECT COUNT(*) FROM flags {conditions_sql} {teams_sql}'
     args = conditions_args
     total_count = database.query(sql, args)[0][0]
 
@@ -108,7 +107,7 @@ def show_flags():
 @auth.auth_required
 def post_flags_manual():
     config = reloader.get_config()
-    flags = re.findall(config['FLAG_FORMAT'], request.form['text'])
+    flags = re.findall(config['FLAG_FORMAT'], request.form['text'], re.M)
 
     cur_time = round(time.time())
     rows = [(item, 'Manual', '*', cur_time, FlagStatus.QUEUED.name)
@@ -120,4 +119,4 @@ def post_flags_manual():
         "VALUES (?, ?, ?, ?, ?)", rows)
     db.commit()
 
-    return ''
+    return Response(status=201)

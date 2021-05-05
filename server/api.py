@@ -36,7 +36,7 @@ def post_flags():
         "VALUES (?, ?, ?, ?, ?)", rows)
     db.commit()
 
-    return ''
+    return Response(status=201)
 
 
 @app.route('/api/graphstream')
