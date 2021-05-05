@@ -83,7 +83,7 @@ function showFlags() {
             $('.search-results .page-link').click((event) => {
                 event.preventDefault();
 
-                setPageNumber($(event.currentTargetthis).data("content"));
+                setPageNumber($(event.currentTarget).data("content"));
                 showFlags();
             });
 
