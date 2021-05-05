@@ -201,6 +201,11 @@ let GRAPH_CONFIG = {
                 grace: '10%',
                 //stacked: true,
             }
+        },
+        elements: {
+            point: {
+                radius: 0,
+            }
         }
     },
 };

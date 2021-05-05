@@ -69,15 +69,18 @@ def get_flags():
                 n = sploit['n']
                 elem['sploits'][sploit_name] = n
             ret.append(elem)
+            
+            if len(ret) % 10 == 0:
+                yield ret
+                ret = []
 
-        return ret
+        yield ret
 
     status = FlagStatus.ACCEPTED
 
     def stream():
-        history = get_history("ACCEPTED")
-        if history:
-            yield f"data: {json.dumps(history)}\n\n"
+        for h in get_history("ACCEPTED"):
+            yield f"data: {json.dumps(h)}\n\n"
 
         queue = flag_ann.listen()
         while True:
