@@ -46,7 +46,7 @@ def get_flags():
         db = database.get(context_bound=False)
 
         curr_cycle = db.execute(
-            "SELECT MAX(sent_cycle) as cycle FROM flags").fetchone()["cycle"] 
+            "SELECT MAX(sent_cycle) as cycle FROM flags").fetchone()["cycle"]
         if not curr_cycle:
             curr_cycle = 0
 
@@ -84,7 +84,6 @@ def get_flags():
             cycle, flags = queue.get()
             resp = {"cycle": cycle, "sploits": {}}
 
-
             for flag in flags:
                 if flag.sploit in resp["sploits"]:
                     continue
@@ -95,7 +94,9 @@ def get_flags():
 
             yield f"data: {json.dumps([resp])}\n\n"
 
-    return Response(stream(), mimetype="text/event-stream")
+    return Response(stream(),
+                    mimetype="text/event-stream",
+                    headers={"Cache-Control": "no-cache"})
 
 
 '''
