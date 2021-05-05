@@ -58,7 +58,8 @@ def get_flags():
             sploit_rows = db.execute(
                 "SELECT sploit, COUNT(*) as n "
                 "FROM flags "
-                "WHERE status = ? AND sent_cycle = ?", (status, cycle)).fetchall()
+                "WHERE status = ? AND sent_cycle = ? "
+                "GROUP BY sploit", (status, cycle)).fetchall()
 
             for sploit in sploit_rows:
                 sploit_name = sploit["sploit"]
@@ -71,10 +72,7 @@ def get_flags():
 
         return ret
 
-    # FIXME
     status = FlagStatus.ACCEPTED
-
-    # FIXME: RETURN FLAG AFTER BEING SENT
 
     def stream():
         history = get_history("ACCEPTED")
@@ -88,7 +86,6 @@ def get_flags():
 
 
             for flag in flags:
-                app.logger.info(flag)
                 if flag.sploit in resp["sploits"]:
                     continue
                 # app.logger.info(flag.status)

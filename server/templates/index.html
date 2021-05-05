@@ -99,7 +99,8 @@
                                 </div>
                                 <div class="col-4">
                                     <label for="team-select">Team</label>
-                                    <select multiple class="form-control form-control-sm h-100" id="team-select" name="team">
+                                    <select multiple class="form-control form-control-sm h-100" id="team-select"
+                                        name="team">
                                         <option value="">All</option>
                                         {% for item in teams %}
                                         <option>{{ item }}</option>
@@ -156,8 +157,21 @@
 
         <div class="search-results" style="display: none;">
             <p>Found <span class="total-count"></span> flags</p>
+            
+            
+            <div class="row">
+                <div class="col">
+                    <ul class="pagination pagination-sm"></ul>
+                </div>
 
-            <ul class="pagination pagination-sm"></ul>
+                <div class="col-2">
+
+                    <div class="progress">
+                        <div id="refresh-progress" class="progress-bar bg-info progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0"
+                            aria-valuemax="100"></div>
+                    </div>
+                </div>
+            </div>
 
             <table class="table table-hover">
                 <thead>

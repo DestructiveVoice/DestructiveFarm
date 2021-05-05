@@ -12,6 +12,7 @@ from server.models import Flag, FlagStatus, SubmitResult
 
 flag_ann = FlagAnnouncer()
 
+
 def get_fair_share(groups, limit):
     if not groups:
         return []
@@ -64,8 +65,9 @@ def run_loop():
     app.logger.info('Starting submit loop')
     with app.app_context():
         db = database.get(context_bound=False)
-    
-    cycle = db.execute("SELECT MAX(sent_cycle) AS last_cycle FROM flags").fetchone()['last_cycle']
+
+    cycle = db.execute("SELECT MAX(sent_cycle) AS last_cycle "
+                       "FROM flags").fetchone()['last_cycle']
     if not cycle:
         cycle = 0
 
@@ -101,8 +103,8 @@ def run_loop():
             # Send flags to gameserver
             results = submit_flags(flags, config)
 
-            rows = [(item.status.name, item.checksystem_response, cycle,item.flag)
-                    for item in results]
+            rows = [(item.status.name, item.checksystem_response, cycle,
+                     item.flag) for item in results]
             db.executemany(
                 "UPDATE flags "
                 "SET status = ?, checksystem_response = ?, sent_cycle = ? "
@@ -110,19 +112,18 @@ def run_loop():
             db.commit()
 
             flags_status = {result.flag: result.status for result in results}
-            
+
             def add_status(item: Flag):
-                return Flag(item.flag, item.sploit, item.team, item.time, flags_status[item.flag], item.checksystem_response, item.sent_cycle)
+                return Flag(item.flag, item.sploit, item.team, item.time,
+                            flags_status[item.flag], item.checksystem_response,
+                            item.sent_cycle)
 
-            flags = map(add_status, flags)
+            flags = list(map(add_status, flags))
             flag_ann.announce((cycle, flags))
-
 
         submit_spent = time.time() - submit_start_time
         if config['SUBMIT_PERIOD'] > submit_spent:
             time.sleep(config['SUBMIT_PERIOD'] - submit_spent)
-
-
 
 
 if __name__ == "__main__":

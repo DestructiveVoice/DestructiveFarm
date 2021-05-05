@@ -38,15 +38,15 @@ function generatePaginator(totalCount, rowsPerPage, pageNumber) {
 
     for (let i = firstShown; i <= lastShown; i++) {
         let extraClasses = (i === pageNumber ? "active" : "");
-        html += `<li class="page-item ${extraClasses}">` +
-            '<a class="page-link" href="#" data-content="' + i + '">' + i + '</a>' +
-            '</li>';
+        html += `<li class="page-item ${extraClasses}">
+                    <a class="page-link" href="#" data-content="${i}"> ${i} </a>
+                </li>`;
     }
 
     if (lastShown < totalPages)
         html += `<li class="page-item">
-            <a class="page-link" href="#" data-content="${totalPages}">»</a> +
-        </li>`;
+                    <a class="page-link" href="#" data-content="${totalPages}">»</a>
+                </li>`;
     return html;
 }
 
@@ -135,7 +135,7 @@ function postFlagsManual() {
 }
 
 let GRAPH_CONFIG = {
-    type: 'line',
+    type: 'bar',
     options: {
         maintainAspectRatio: false,
         responsive: true,
@@ -143,11 +143,11 @@ let GRAPH_CONFIG = {
             zoom: {
                 zoom: {
                     enabled: true,
-                    mode: 'xy',
+                    mode: 'x',
                 },
                 pan: {
                     enabled: true,
-                    mode: "xy"
+                    mode: "x"
                 },
                 limits: {
                     x: {
@@ -168,11 +168,14 @@ let GRAPH_CONFIG = {
         scales: {
             x: {
                 type: "linear",
-                min: 0
+                beginAtZero: true,
+                stacked: true
+
             },
             y: {
                 type: "linear",
-                min: 0
+                beginAtZero: true,
+                stacked: true,
             }
         }
     },
@@ -190,20 +193,19 @@ function updateGraph(chart) {
         elements.forEach(elem => {
             let cycle = elem["cycle"];
 
-            for (sploit of new Set(Object.keys(elem["sploits"]), SPLOITS.keys()).keys()) {
+            for (sploit of new Set([...Object.keys(elem["sploits"]), ...SPLOITS])) {
 
                 let index = chart.data.datasets.findIndex(el => el.label == sploit);
                 let n = elem["sploits"][sploit] || 0;
-                console.log(cycle)
 
                 if (index != -1) {
                     chart.data.datasets[index].data.push({ x: cycle, y: n });
                 } else {
                     SPLOITS.add(sploit);
                     chart.data.datasets.push({
-                        borderColor: 'hsla(' + hashCode(sploit) % 360 + ', 100%, 50%, 1)',
+                        borderColor: 'hsla(' + hashCode(sploit) % 360 + ', 50%, 50%, 1)',
+                        backgroundColor: 'hsla(' + hashCode(sploit) % 360 + ', 50%, 50%, 1)',
                         fill: false,
-                        tension: 0.1,
 
                         label: sploit,
                         data: [{ x: cycle, y: n }],
@@ -244,4 +246,21 @@ $(() => {
     var chart = new Chart(ctx, GRAPH_CONFIG)
 
     updateGraph(chart)
+
+
+    // Update table every x seconds
+    var REF_INTERVAL = 30; // Seconds
+    var i = 0;
+    setInterval(() => {
+        if (i < REF_INTERVAL) {
+            i++;
+            let prog = i / REF_INTERVAL * 100;
+            $("#refresh-progress").attr('aria-valuenow', prog).css('width', prog + '%');
+            $("#refresh-progress").html(`Refresh in ${REF_INTERVAL - i}`);
+        } else {
+            i = 0;
+            $("#refresh-progress").attr('aria-valuenow', 0).css('width', '0%');
+            showFlags();
+        }
+    }, 1000)
 });
