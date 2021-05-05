@@ -12,8 +12,9 @@ function generateFlagTableRows(rows) {
         let cells = [
             item.sploit,
             item.team !== null ? item.team : '',
-            item.flag,
+            `<code>${item.flag}</code>`,
             dateFormat.format(new Date(item.time * 1000)),
+            item.sent_cycle,
             `<i class="bi ${STATUSES[item.status]}"></i>`,
             item.checksystem_response !== null ? item.checksystem_response : '',
         ];
@@ -144,7 +145,7 @@ let GRAPH_CONFIG = {
             fill: true,
             borderColor: 'hsla(120, 50%, 50%, 0.6)',
             backgroundColor: 'hsla(120, 50%, 50%, 0.05)',
-            // tension: 0.9,
+            tension: 0.6,
             cubicInterpolationMode: "monotone"
 
         }]
@@ -193,7 +194,8 @@ let GRAPH_CONFIG = {
                 beginAtZero: true,
                 ticks: {
                     stepSize: 1
-                }
+                },
+                grace: '10%',
                 //stacked: true,
             }
         }
@@ -203,7 +205,7 @@ let GRAPH_CONFIG = {
 var SPLOITS = new Set();
 function updateGraph(chart) {
     let sse = new EventSource("/api/graphstream")
-
+    let l_values = []
     sse.onmessage = (resp) => {
         let elements = JSON.parse(resp.data);
         if (elements.length == 0) return;
@@ -232,8 +234,15 @@ function updateGraph(chart) {
                     });
                 }
             }
-            if (total != 0)
-                chart.data.datasets[0].data.push({ x: cycle, y: total });
+            // if (total == 0) return;
+
+            l_values.push(total)
+            let DIM = 3;
+            if (l_values.length > DIM - 1) {
+                l_values.shift()
+
+                chart.data.datasets[0].data.push({ x: cycle, y: l_values.reduce((a, b) => a + b) / DIM });
+            }
         })
 
         chart.update()
