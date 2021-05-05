@@ -7,6 +7,5 @@ RUN pip3 install -r requirements.txt
 
 COPY ./server ./
 
-WORKDIR /
-ENTRYPOINT [ "/server/start_server.sh" ]
+ENTRYPOINT [ "./start_server.sh" ]
 
