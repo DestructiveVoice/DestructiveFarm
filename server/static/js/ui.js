@@ -138,7 +138,8 @@ let GRAPH_CONFIG = {
     type: 'bar',
     options: {
         maintainAspectRatio: false,
-        responsive: true,
+        //responsive: true,
+        barThickness: "flex",
         plugins: {
             zoom: {
                 zoom: {
@@ -169,13 +170,18 @@ let GRAPH_CONFIG = {
             x: {
                 type: "linear",
                 beginAtZero: true,
-                stacked: true
+                ticks: {
+                    stepSize: 1
+                }
 
             },
             y: {
                 type: "linear",
                 beginAtZero: true,
-                stacked: true,
+                ticks: {
+                    stepSize: 1
+                }
+                //stacked: true,
             }
         }
     },
