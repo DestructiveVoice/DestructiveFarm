@@ -72,7 +72,7 @@ function showFlags() {
         </div>
     `).show();
 
-    $.post('/ui/show_flags', $('#show-flags-form').serialize())
+    $.get('/ui/show_flags?'+ $('#show-flags-form').serialize())
         .done(response => {
             $('.search-results tbody').html(generateFlagTableRows(response.rows));
 

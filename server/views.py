@@ -38,30 +38,30 @@ FORM_DATETIME_FORMAT = '%Y-%m-%d %H:%M'
 FLAGS_PER_PAGE = 30
 
 
-@app.route('/ui/show_flags', methods=['POST'])
+@app.route('/ui/show_flags')
 @auth.auth_required
 def show_flags():
     conditions = []
 
     for column in ['sploit', 'status']:
-        value = request.form[column]
+        value = request.args[column]
         if value:
             conditions.append((f'{column} = ?', value))
 
     for column in ['flag', 'checksystem_response']:
-        value = request.form[column]
+        value = request.args[column]
         if value:
             conditions.append((f'INSTR(LOWER({column}), ?)', value.lower()))
 
     for param in ['time-since', 'time-until']:
-        value = request.form[param].strip()
+        value = request.args[param].strip()
         if value:
             timestamp = round(
                 datetime.strptime(value, FORM_DATETIME_FORMAT).timestamp())
             sign = '>=' if param == 'time-since' else '<='
             conditions.append((f'time {sign} ?', timestamp))
 
-    page_number = int(request.form['page-number'])
+    page_number = int(request.args['page-number'])
     if page_number < 1:
         raise ValueError('Invalid page-number')
 
@@ -74,7 +74,7 @@ def show_flags():
         conditions_args = []
 
     teams = [
-        f"'{team}'" for team in request.form.getlist('team') if team != ""
+        f"'{team}'" for team in request.args.getlist('team') if team != ""
     ]
     teams_sql = ""
     if len(teams) != 0:
