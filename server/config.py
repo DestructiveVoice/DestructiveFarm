@@ -5,7 +5,7 @@ CONFIG = {
     # fetch FLAG_FORMAT from sploits' stdout.
     'TEAMS': {'Team #{}'.format(i): '10.0.0.{}'.format(i)
               for i in range(1, 29 + 1)},
-    'FLAG_FORMAT': r'F0X\{[a-f0-9]{32}\}',
+    'FLAG_FORMAT': r'[a-zA-Z0-9]{31}=',
 
     # This configures how and where to submit flags.
     # The protocol must be a module in protocols/ directory.
