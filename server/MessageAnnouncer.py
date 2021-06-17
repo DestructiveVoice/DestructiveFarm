@@ -1,4 +1,5 @@
 from queue import Queue, Full
+from typing import Tuple
 from server.models import Flag
 
 
@@ -11,7 +12,7 @@ class FlagAnnouncer:
         self.listeners.append(q)
         return q
 
-    def announce(self, msg: (int, list[Flag])) -> None:
+    def announce(self, msg: Tuple[int, list[Flag]]) -> None:
         for i in reversed(range(len(self.listeners))):
             try:
                 self.listeners[i].put_nowait(msg)

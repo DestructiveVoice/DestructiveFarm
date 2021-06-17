@@ -13,6 +13,7 @@ from server.spam import is_spam_flag
 @auth.api_auth_required
 def get_config():
     config = reloader.get_config()
+
     return jsonify({
         key: value
         for key, value in config.items()
@@ -69,7 +70,7 @@ def get_flags():
                 n = sploit['n']
                 elem['sploits'][sploit_name] = n
             ret.append(elem)
-            
+
             if len(ret) % 10 == 0:
                 yield ret
                 ret = []

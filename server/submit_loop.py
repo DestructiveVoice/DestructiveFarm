@@ -53,7 +53,7 @@ def submit_flags(flags, config):
     try:
         return list(module.submit_flags(flags, config))
     except Exception as e:
-        message = '{}: {}'.format(type(e).__name__, str(e))
+        message = f'{type(e).__name__}: {str(e)}'
         app.logger.exception('Exception on submitting flags')
         return [
             SubmitResult(item.flag, FlagStatus.QUEUED, message)
