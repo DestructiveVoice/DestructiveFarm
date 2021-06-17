@@ -2,7 +2,8 @@ name: Docker image
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build_image_ubuntu:
