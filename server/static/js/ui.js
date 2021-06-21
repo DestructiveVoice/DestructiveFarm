@@ -1,5 +1,11 @@
 function generateFlagTableRows(rows) {
-    let dateFormat = new Intl.DateTimeFormat('it-IT', { dateStyle: "short", timeStyle: "long" })
+    let dateFormat = new Intl.DateTimeFormat('it-IT',
+        {
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric'
+        }
+    )
     let html = '';
     let STATUSES = {
         "QUEUED": "bi-clock-fill text-warning",
