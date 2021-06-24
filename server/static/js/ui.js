@@ -271,10 +271,20 @@ function hashCode(str) { // java String#hashCode
     return hash;
 }
 
-
+function updateSploitTable() {
+    $.ajax({
+        url: "/api/successful_exploits",
+        type: "GET",
+        success: response => {
+            $("#sploits-table").html(response);
+        },
+        error: xhr => { }
+    });
+}
 
 $(() => {
     showFlags();
+    updateSploitTable();
 
     $('#show-flags-form').submit(function (event) {
         event.preventDefault();
@@ -307,6 +317,7 @@ $(() => {
             i = 0;
             $("#refresh-progress").attr('aria-valuenow', 0).css('width', '0%');
             showFlags();
+            updateSploitTable();
         }
     }, 1000)
 });

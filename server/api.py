@@ -1,10 +1,10 @@
 from .submit_loop import flag_ann
 import time
 
-from flask import request, jsonify, Response
+from flask import request, jsonify, Response, render_template
 import json
 
-from server import app, auth, database, reloader
+from server import app, auth, database, reloader, config
 from server.models import FlagStatus
 from server.spam import is_spam_flag
 
@@ -38,6 +38,44 @@ def post_flags():
     db.commit()
 
     return Response(status=201)
+
+
+@app.route('/api/successful_exploits')
+@auth.api_auth_required
+def successful_exploits():
+
+    max_val = database.query(
+        "SELECT MAX(sent_cycle) as max FROM flags")[0]["max"]
+    if max_val == None:
+        return Response(status=204)  # TODO: Qualcosa di meglio?
+
+    min_val = max(1, max_val-4)
+    stats_team = dict()
+    for team, ip in config.CONFIG["TEAMS"].items():
+        stats_team[team] = dict(ip=ip, round_info=dict())
+
+    exploit_set = set()
+
+    for round in range(min_val, max_val+1):
+        results = database.query("SELECT team, GROUP_CONCAT(DISTINCT sploit) AS exploits "
+                                    "FROM flags WHERE sent_cycle= ? AND status='ACCEPTED' "
+                                    "GROUP BY team ORDER BY team", (round,))
+        for result in results:
+            team = result["team"]
+            exploits = result["exploits"].split(",")
+            exploit_set.update(exploits)
+            stats_team[team]["round_info"][round] = exploits   
+
+
+        for team in config.CONFIG["TEAMS"]:
+            if round not in stats_team[team]["round_info"]:
+                stats_team[team]["round_info"][round] = []
+            
+
+    return render_template("sploitTable.html",
+                            rounds=list(range(min_val, max_val+1)),
+                            sploits=list(exploit_set),
+                            stats=stats_team)
 
 
 @app.route('/api/graphstream')

@@ -146,57 +146,94 @@
 
         <div class="mb-3 text-center query-status"></div>
 
-        <div class="card border-light mb-3 mx-auto col-11">
+        <div class="row mb-3">
+            <button class="btn btn-primary mx-auto" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGraph"
+                aria-expanded="false" aria-controls="collapseGraph">
+                Flag graph
+            </button>
+        </div>
+
+        <div class="collapse card border-light mb-3 mx-auto" id="collapseGraph">
             <div class="card-body">
                 <h4 class="card-title">Sploits graph</h4>
-                <div class="chart-container" style="position: relative; height: 400px">
+                <div class="chart-container" style="position: relative; height: 300px">
                     <canvas id="flag-graph"></canvas>
                 </div>
             </div>
         </div>
 
-
-        <div class="search-results" style="display: none;">
-            <p>Found <span class="total-count"></span> flags</p>
+        <div class="mb-3 text-center query-status"></div>
 
 
-            <div class="row">
-                <div class="col">
-                    <ul class="pagination pagination-sm"></ul>
-                </div>
-
-                <div class="col-2">
-
-                    <div class="progress">
-                        <div id="refresh-progress"
-                            class="progress-bar bg-info progress-bar-striped progress-bar-animated" role="progressbar"
-                            aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+        <div class="card border-light mb-3">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col pl-3">
+                        <h4 class="card-title">Sploits per team</h4>
+                    </div>
+                    <div class="col text-right">
+                        <button class="btn btn-success" onclick="updateSploitTable()"><i class="bi bi-arrow-repeat"></i></button>
                     </div>
                 </div>
+
+                <div id="sploits-table"></div>
             </div>
-
-            <table class="table table-hover">
-                <thead>
-                    <tr class="table-secondary">
-                        <th scope="col">Sploit</th>
-                        <th scope="col">Team</th>
-                        <th scope="col">Flag</th>
-                        <th scope="col">Time</th>
-                        <th scope="col">Sent cycle</th>
-                        <th scope="col">Status</th>
-                        <th scope="col">Checksystem Response</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-
-            <ul class="pagination pagination-sm"></ul>
         </div>
+
+
+
+        <div class="card border-light mb-3">
+            <div class="card-body">
+                <h4 class="card-title">Flag table</h4>
+
+                <div class="search-results" style="display: none;">
+                    <p>Found <span class="total-count"></span> flags</p>
+
+
+                    <div class="row">
+                        <div class="col">
+                            <ul class="pagination pagination-sm"></ul>
+                        </div>
+
+                        <div class="col-2">
+
+                            <div class="progress">
+                                <div id="refresh-progress"
+                                    class="progress-bar bg-info progress-bar-striped progress-bar-animated"
+                                    role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <table class="table table-hover">
+                        <thead>
+                            <tr class="table-secondary">
+                                <th scope="col">Sploit</th>
+                                <th scope="col">Team</th>
+                                <th scope="col">Flag</th>
+                                <th scope="col">Time</th>
+                                <th scope="col">Sent cycle</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Checksystem Response</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+
+                    <ul class="pagination pagination-sm"></ul>
+                </div>
+            </div>
+        </div>
+
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.2.0/dist/chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
     <script
         src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.0.0-beta.5/dist/chartjs-plugin-zoom.min.js"></script>
     <script

@@ -1,0 +1,33 @@
+<table class="table table-hover table-striped">
+    <thead class="table-success">
+        <th>
+            Team name
+        </th>
+        {% for round in rounds %}
+        <th>
+            Round #{{round}}
+        </th>
+        {% endfor %}
+    </thead>
+    <tbody>
+        {% for team_name,team_data in stats.items() %}
+        <tr>
+            <td title="{{team_data['ip']}}" style="max-width: 200px">
+                {{team_name}}
+            </td>
+            {% for round_number,round_sploits in team_data["round_info"].items() %}
+            <td>
+                {% for sploit in sploits %}
+                {% if sploit in round_sploits%}
+                <i class="bi bi-check-circle-fill text-success" title="{{sploit}}"></i>
+                {% else %}
+                <i class="bi bi-x-circle-fill text-danger" title="{{sploit}}"></i>
+                {% endif %}
+                {% endfor %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+        
+    </tbody>
+</table>
