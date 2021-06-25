@@ -55,27 +55,39 @@ def successful_exploits():
         stats_team[team] = dict(ip=ip, round_info=dict())
 
     exploit_set = set()
+    rounds = {}
 
     for round in range(min_val, max_val+1):
+        exp_round_stat = dict()
         results = database.query("SELECT team, GROUP_CONCAT(DISTINCT sploit) AS exploits "
-                                    "FROM flags WHERE sent_cycle= ? AND status='ACCEPTED' "
-                                    "GROUP BY team ORDER BY team", (round,))
+                                 "FROM flags WHERE sent_cycle= ? AND status='ACCEPTED' "
+                                 "GROUP BY team ORDER BY team", (round,))
+
         for result in results:
             team = result["team"]
             exploits = result["exploits"].split(",")
+
+            for exploit in exploits:
+                if exploit not in exp_round_stat:
+                    exp_round_stat[exploit] = 0
+                exp_round_stat[exploit] += 1
+
             exploit_set.update(exploits)
-            stats_team[team]["round_info"][round] = exploits   
+            stats_team[team]["round_info"][round] = exploits
+
+        rounds[round] = exp_round_stat
 
 
         for team in config.CONFIG["TEAMS"]:
             if round not in stats_team[team]["round_info"]:
                 stats_team[team]["round_info"][round] = []
-            
+
 
     return render_template("sploitTable.html",
-                            rounds=list(range(min_val, max_val+1)),
-                            sploits=list(exploit_set),
-                            stats=stats_team)
+    #return jsonify(
+                           rounds=rounds,
+                           sploits=list(exploit_set),
+                           stats=stats_team)
 
 
 @app.route('/api/graphstream')

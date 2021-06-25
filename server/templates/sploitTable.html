@@ -28,6 +28,23 @@
             {% endfor %}
         </tr>
         {% endfor %}
-        
+        {% set n_teams = stats|length %}
+        <tr>
+            <td>
+                SUM
+            </td>
+            {% for round_expl in rounds.values() %}
+                <td>
+                {% for sploit in sploits %}
+                    {% if sploit not in round_expl %}
+                    0/{{n_teams}}
+                    {% else %}
+                    {{round_expl[sploit]}}/{{n_teams}}
+                    {% endif %}
+                {% endfor %}
+                </td>
+            {% endfor %}
+        </tr>
+
     </tbody>
 </table>
