@@ -81,6 +81,9 @@ def parse_args():
     parser.add_argument('-u', '--server-url', metavar='URL',
                         default='http://farm.kolambda.com:5000',
                         help='Server URL')
+    parser.add_argument('-a', '--alias', metavar='ALIAS',
+                        default=None,
+                        help='Sploit alias')
     parser.add_argument('--token', metavar='TOKEN',
                         help='Farm authorization token')
     parser.add_argument('--interpreter', metavar='COMMAND',
@@ -246,7 +249,11 @@ def get_config(args):
 
 
 def post_flags(args, flags):
-    sploit_name = os.path.basename(args.sploit)
+    if args.alias is not None:
+        sploit_name = args.alias
+    else:
+        sploit_name = os.path.basename(args.sploit)
+        
     data = [{'flag': item['flag'], 'sploit': sploit_name, 'team': item['team']}
             for item in flags]
 
