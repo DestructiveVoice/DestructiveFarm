@@ -2,15 +2,10 @@ version: "3.7"
 
 services:
   farm:
-    # image: ghcr.io/str4ngeb0yz/destructivefarm:slim
+    image: ghcr.io/str4ngeb0yz/destructivefarm
     # build: 
     #   context: .
     #   dockerfile: Dockerfile
-
-    # image: ghcr.io/str4ngeb0yz/destructivefarm:alpine
-    build: 
-      context: .
-      dockerfile: Dockerfile.alpine
 
     volumes:
       - destructive_flags:/var/destructivefarm/
