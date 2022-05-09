@@ -2,24 +2,20 @@ version: "3.7"
 
 services:
   farm:
-    image: ghcr.io/str4ngeb0yz/destructivefarm:slim
+    # image: ghcr.io/str4ngeb0yz/destructivefarm:slim
+    # build: 
+    #   context: .
+    #   dockerfile: Dockerfile
+
+    # image: ghcr.io/str4ngeb0yz/destructivefarm:alpine
     build: 
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.alpine
+
     volumes:
-      - destructive_flags:/var/server/
+      - destructive_flags:/var/destructivefarm/
     ports: 
-      - 10.69.42.2:5000:5000
-    
-  # farm_lite:
-  #   image: ghcr.io/str4ngeb0yz/destructivefarm:alpine
-  #   build: 
-  #     context: .
-  #     dockerfile: Dockerfile.alpine
-  #   volumes:
-  #     - destructive_flags:/var/server/
-  #   ports: 
-  #     - 10.69.42.2:5000:5000
+      - 127.0.0.1:5000:5000
 
 volumes:
   destructive_flags:

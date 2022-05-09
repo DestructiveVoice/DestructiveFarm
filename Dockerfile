@@ -1,19 +1,24 @@
 FROM python:3-slim
 
+# Install Poetry
+ENV POETRY_VERSION "1.1.13"
+RUN pip install poetry==${POETRY_VERSION}
+RUN poetry config virtualenvs.create false
+
 WORKDIR /opt/server
 
 # Install dependencies:
-RUN python3 -m venv /opt/venv
-COPY ./server/requirements.txt ./requirements.txt
-RUN /opt/venv/bin/pip install -r requirements.txt
+COPY pyproject.toml poetry.lock ./
+RUN poetry install
 
-COPY ./server ./
+COPY server/ ./
 
-ENV FLAGS_DATABASE=/var/server/flags.sqlite 
+ENV FLAGS_DATABASE=/var/destructivefarm/flags.sqlite 
 ENV FLASK_APP=/opt/server/standalone.py
 
-VOLUME [ "/var/server" ]
+VOLUME [ "/var/destructivefarm" ]
+EXPOSE 5000
 
 # Run the application:
-ENTRYPOINT ["/opt/venv/bin/python", "-m", "flask", "run", "--host", "0.0.0.0", "--with-threads" ]
+ENTRYPOINT ["poetry", "run", "python", "-m", "flask", "run", "--host", "0.0.0.0", "--with-threads" ]
 
