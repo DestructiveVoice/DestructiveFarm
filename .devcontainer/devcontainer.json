@@ -1,0 +1,11 @@
+{
+    "name": "Poetry",
+    "dockerComposeFile": [
+        "../docker-compose.yml",
+        "../docker-compose.dev.yml"
+    ],
+    "service": "farm",
+    "postCreateCommand": "apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install git -y",
+    "workspaceFolder": "/opt/server/",
+    "overrideCommand": true
+}

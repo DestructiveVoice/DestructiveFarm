@@ -20,5 +20,4 @@ VOLUME [ "/var/destructivefarm" ]
 EXPOSE 5000
 
 # Run the application:
-ENTRYPOINT ["poetry", "run", "python", "-m", "flask", "run", "--host", "0.0.0.0", "--with-threads" ]
-
+ENTRYPOINT "cd ./server && ./server/start_server.sh"

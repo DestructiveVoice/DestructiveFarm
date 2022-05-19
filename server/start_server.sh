@@ -2,4 +2,11 @@
 
 # Use FLASK_DEBUG=True if needed
 
-FLASK_APP=standalone.py python3 -m flask run --host 0.0.0.0 --with-threads
+export FLASK_APP="standalone.py"
+export FLASK_PORT="1234"
+export FLASK_HOST="0.0.0.0"
+
+poetry run python -m flask run \
+--host $FLASK_HOST \
+--port $FLASK_PORT \
+--with-threads
