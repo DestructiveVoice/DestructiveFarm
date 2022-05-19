@@ -1,3 +1,4 @@
+import importlib
 from .submit_loop import flag_ann
 import time
 
@@ -9,47 +10,73 @@ from server.models import FlagStatus
 from server.spam import is_spam_flag
 
 
-@app.route('/api/get_config')
+@app.route("/api/get_config")
 @auth.api_auth_required
 def get_config():
+
+    # Reload the config from config.py
     config = reloader.get_config()
 
-    return jsonify({
+    module = importlib.import_module("server.protocols." + config["SYSTEM_PROTOCOL"])
+
+    # Filter PASSWORD and TOKEN keys from the sent config
+    client_config = {
         key: value
         for key, value in config.items()
-        if 'PASSWORD' not in key and 'TOKEN' not in key
-    })
+        if "PASSWORD" not in key and "TOKEN" not in key
+    }
+
+    # Add attack info to the config
+    try:
+        server_info = module.get_attack_info(config)
+        if server_info:
+            client_config["ATTACK_INFO"] = server_info
+    except Exception:
+        pass
+
+    # Refresh teams info
+    try:
+        teams = module.get_teams(config)
+        if teams:
+            client_config["TEAMS"] = teams
+    except Exception:
+        pass
+
+    return jsonify(client_config)
 
 
-@app.route('/api/post_flags', methods=['POST'])
+@app.route("/api/post_flags", methods=["POST"])
 @auth.api_auth_required
 def post_flags():
     flags = request.get_json()
-    flags = [item for item in flags if not is_spam_flag(item['flag'])]
+    flags = [item for item in flags if not is_spam_flag(item["flag"])]
 
     cur_time = round(time.time())
-    rows = [(item['flag'], item['sploit'], item['team'], cur_time,
-             FlagStatus.QUEUED.name) for item in flags]
+    rows = [
+        (item["flag"], item["sploit"], item["team"], cur_time, FlagStatus.QUEUED.name)
+        for item in flags
+    ]
 
     db = database.get()
     db.executemany(
         "INSERT OR IGNORE INTO flags (flag, sploit, team, time, status) "
-        "VALUES (?, ?, ?, ?, ?)", rows)
+        "VALUES (?, ?, ?, ?, ?)",
+        rows,
+    )
     db.commit()
 
     return Response(status=201)
 
 
-@app.route('/api/successful_exploits')
+@app.route("/api/successful_exploits")
 @auth.api_auth_required
 def successful_exploits():
 
-    max_val = database.query(
-        "SELECT MAX(sent_cycle) as max FROM flags")[0]["max"]
+    max_val = database.query("SELECT MAX(sent_cycle) as max FROM flags")[0]["max"]
     if max_val == None:
         return Response(status=204)  # TODO: Qualcosa di meglio?
 
-    min_val = max(1, max_val-4)
+    min_val = max(1, max_val - 4)
     stats_team = dict()
     for team, ip in config.CONFIG["TEAMS"].items():
         stats_team[team] = dict(ip=ip, round_info=dict())
@@ -57,11 +84,14 @@ def successful_exploits():
     exploit_set = set()
     rounds = {}
 
-    for round in range(min_val, max_val+1):
+    for round in range(min_val, max_val + 1):
         exp_round_stat = dict()
-        results = database.query("SELECT team, GROUP_CONCAT(DISTINCT sploit) AS exploits "
-                                 "FROM flags WHERE sent_cycle= ? AND status='ACCEPTED' "
-                                 "GROUP BY team ORDER BY team", (round,))
+        results = database.query(
+            "SELECT team, GROUP_CONCAT(DISTINCT sploit) AS exploits "
+            "FROM flags WHERE sent_cycle= ? AND status='ACCEPTED' "
+            "GROUP BY team ORDER BY team",
+            (round,),
+        )
 
         for result in results:
             team = result["team"]
@@ -77,27 +107,28 @@ def successful_exploits():
 
         rounds[round] = exp_round_stat
 
-
         for team in config.CONFIG["TEAMS"]:
             if round not in stats_team[team]["round_info"]:
                 stats_team[team]["round_info"][round] = []
 
+    return render_template(
+        "sploitTable.html",
+        # return jsonify(
+        rounds=rounds,
+        sploits=list(exploit_set),
+        stats=stats_team,
+    )
 
-    return render_template("sploitTable.html",
-    #return jsonify(
-                           rounds=rounds,
-                           sploits=list(exploit_set),
-                           stats=stats_team)
 
-
-@app.route('/api/graphstream')
+@app.route("/api/graphstream")
 @auth.api_auth_required
 def get_flags():
     def get_history(status):
         db = database.get(context_bound=False)
 
         curr_cycle = db.execute(
-            "SELECT MAX(sent_cycle) as cycle FROM flags").fetchone()["cycle"]
+            "SELECT MAX(sent_cycle) as cycle FROM flags"
+        ).fetchone()["cycle"]
         if not curr_cycle:
             curr_cycle = 0
 
@@ -110,15 +141,17 @@ def get_flags():
                 "SELECT sploit, COUNT(*) as n "
                 "FROM flags "
                 "WHERE status = ? AND sent_cycle = ? "
-                "GROUP BY sploit", (status, cycle)).fetchall()
+                "GROUP BY sploit",
+                (status, cycle),
+            ).fetchall()
 
             for sploit in sploit_rows:
                 sploit_name = sploit["sploit"]
                 if sploit_name is None:
                     continue
 
-                n = sploit['n']
-                elem['sploits'][sploit_name] = n
+                n = sploit["n"]
+                elem["sploits"][sploit_name] = n
             ret.append(elem)
 
             if len(ret) % 10 == 0:
@@ -143,17 +176,17 @@ def get_flags():
                     continue
                 # app.logger.info(flag.status)
                 resp["sploits"][flag.sploit] = sum(
-                    1 for x in flags
-                    if x.sploit == flag.sploit and x.status == status)
+                    1 for x in flags if x.sploit == flag.sploit and x.status == status
+                )
 
             yield f"data: {json.dumps([resp])}\n\n"
 
-    return Response(stream(),
-                    mimetype="text/event-stream",
-                    headers={"Cache-Control": "no-cache"})
+    return Response(
+        stream(), mimetype="text/event-stream", headers={"Cache-Control": "no-cache"}
+    )
 
 
-'''
+"""
 [
   {
       cycle: 123123,
@@ -163,4 +196,4 @@ def get_flags():
       }
   }
 ]
-'''
+"""
