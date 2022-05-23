@@ -6,26 +6,7 @@ on:
       - main
 
 jobs:
-  build_image_ubuntu:
-    name: Build alpine-based image
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build and push alpine
-        id: docker_build
-        uses: docker/build-push-action@v3
-        with:
-          push: false
-          tags: ghcr.io/str4ngeb0yz/destructivefarm:alpine
-          file: Dockerfile.alpine
-
-      - name: Image digests
-        run: echo ${{ steps.docker_build.outputs.digest }}
-
-  build_image_alpine:
+  build_image:
     name: Build debian-based image
     runs-on: ubuntu-latest
 

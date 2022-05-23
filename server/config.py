@@ -14,7 +14,7 @@ CONFIG = {
     # The protocol must be a module in protocols/ directory.
 
     'SYSTEM_PROTOCOL': 'dummy',
-    # 'ATTACK_ENDPOINT': "http://#FIXME",
+    # 'ATTACK_INFO_ENDPOINT': "http://#FIXME",
     # 'SYSTEM_HOST': '127.0.0.1',
     # 'SYSTEM_PORT': 31337,
     # 'TEAM_TOKEN': 'your_secret_token',
