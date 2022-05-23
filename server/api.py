@@ -2,15 +2,18 @@ import importlib
 from .submit_loop import flag_ann
 import time
 
-from flask import request, jsonify, Response, render_template
+from flask import Blueprint, request, jsonify, Response, render_template
 import json
 
 from server import app, auth, database, reloader, config
 from server.models import FlagStatus
 from server.spam import is_spam_flag
 
+bp = Blueprint("api", __name__, url_prefix="/api")
 
-@app.route("/api/get_config")
+
+@bp.get("/get_config")
+@bp.get("/config")
 @auth.api_auth_required
 def get_config():
 
@@ -26,26 +29,27 @@ def get_config():
         if "PASSWORD" not in key and "TOKEN" not in key
     }
 
-    # Add attack info to the config
-    try:
-        server_info = module.get_attack_info(config)
-        if server_info:
-            client_config["ATTACK_INFO"] = server_info
-    except Exception:
-        pass
-
     # Refresh teams info
     try:
         teams = module.get_teams(config)
         if teams:
             client_config["TEAMS"] = teams
-    except Exception:
-        pass
+    except Exception as e:
+        app.logger.warning("Could not refresh team info.", exc_info=e)
+
+    # Add attack info to the config
+    try:
+        server_info = module.get_attack_info(config)
+        if server_info:
+            client_config["ATTACK_INFO"] = server_info
+    except Exception as e:
+        app.logger.warning("Could not get attack info.", exc_info=e)
 
     return jsonify(client_config)
 
 
-@app.route("/api/post_flags", methods=["POST"])
+@bp.post("/post_flags")
+@bp.post("/flags")
 @auth.api_auth_required
 def post_flags():
     flags = request.get_json()
@@ -68,7 +72,8 @@ def post_flags():
     return Response(status=201)
 
 
-@app.route("/api/successful_exploits")
+@bp.get("/successful_exploits")
+@bp.get("/exploits")
 @auth.api_auth_required
 def successful_exploits():
 
@@ -120,7 +125,8 @@ def successful_exploits():
     )
 
 
-@app.route("/api/graphstream")
+@bp.get("/graphstream")
+@bp.get("/flags/stream")
 @auth.api_auth_required
 def get_flags():
     def get_history(status):
