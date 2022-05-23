@@ -47,7 +47,7 @@ def get_teams(config):
 
 def get_attack_info(config):
     # Handle the case of not specified attack endpoint
-    if "ATTACK_ENDPOINT" not in config:
+    if "ATTACK_INFO_ENDPOINT" not in config:
         return {}
 
     global last_config_check
@@ -55,7 +55,7 @@ def get_attack_info(config):
     curr_time = time.time()
 
     if (curr_time - last_config_check) > config["SUBMIT_PERIOD"]:
-        resp = requests.get(config["ATTACK_ENDPOINT"])
+        resp = requests.get(config["ATTACK_INFO_ENDPOINT"])
 
         try:
             last_config = resp.json()
