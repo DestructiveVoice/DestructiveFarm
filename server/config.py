@@ -3,30 +3,18 @@ CONFIG = {
 
     # The clients will run sploits on TEAMS and
     # fetch FLAG_FORMAT from sploits' stdout.
-    'TEAMS': {'Team #{}'.format(i): '10.0.0.{}'.format(i)
-              for i in range(1, 29 + 1)},
+
+    # WARNING: THIS IS A FALLBACK DICTIONARY IF THE PROTOCOL DOES NOT PROVIDE UPDATED TEAMS.
+    'TEAMS': {'Team #{}'.format(i): '10.0.0.{}'.format(i) for i in range(1, 29 + 1)},
+
+        
     'FLAG_FORMAT': r'[a-zA-Z0-9]{31}=',
 
     # This configures how and where to submit flags.
     # The protocol must be a module in protocols/ directory.
 
-    # 'SYSTEM_PROTOCOL': 'ructf_tcp',
-    # 'SYSTEM_HOST': '127.0.0.1',
-    # 'SYSTEM_PORT': 31337,
-
-    # 'SYSTEM_PROTOCOL': 'ructf_http',
-    # 'SYSTEM_URL': 'http://monitor.ructfe.org/flags',
-    # 'SYSTEM_TOKEN': 'your_secret_token',
-
-    # 'SYSTEM_PROTOCOL': 'volgactf',
-    # 'SYSTEM_HOST': '127.0.0.1',
-
-    # 'SYSTEM_PROTOCOL': 'forcad_tcp',
-    # 'SYSTEM_HOST': '127.0.0.1',
-    # 'SYSTEM_PORT': 31337,
-    # 'TEAM_TOKEN': 'your_secret_token',
-
     'SYSTEM_PROTOCOL': 'dummy',
+    # 'ATTACK_INFO_ENDPOINT': "http://#FIXME",
     # 'SYSTEM_HOST': '127.0.0.1',
     # 'SYSTEM_PORT': 31337,
     # 'TEAM_TOKEN': 'your_secret_token',
@@ -34,6 +22,7 @@ CONFIG = {
     # The server will submit not more than SUBMIT_FLAG_LIMIT flags
     # every SUBMIT_PERIOD seconds. Flags received more than
     # FLAG_LIFETIME seconds ago will be skipped.
+
     'SUBMIT_FLAG_LIMIT': 250,
     'SUBMIT_PERIOD': 60,
     'FLAG_LIFETIME': 11 * 60,

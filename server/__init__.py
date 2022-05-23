@@ -11,4 +11,7 @@ for handler in app.logger.handlers:
 
 
 import server.api
+
+app.register_blueprint(server.api.bp)
+
 import server.views
