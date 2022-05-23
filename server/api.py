@@ -1,13 +1,14 @@
 import importlib
-from .submit_loop import flag_ann
+import json
 import time
 
-from flask import Blueprint, request, jsonify, Response, render_template
-import json
+from flask import Blueprint, Response, jsonify, render_template, request
 
-from server import app, auth, database, reloader, config
+from server import app, auth, config, database, metrics, reloader
 from server.models import FlagStatus
 from server.spam import is_spam_flag
+
+from .submit_loop import flag_ann
 
 bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -62,11 +63,12 @@ def post_flags():
     ]
 
     db = database.get()
-    db.executemany(
+    cursor = db.executemany(
         "INSERT OR IGNORE INTO flags (flag, sploit, team, time, status) "
         "VALUES (?, ?, ?, ?, ?)",
         rows,
     )
+    metrics.RECIEVED_FLAGS.inc(cursor.rowcount)
     db.commit()
 
     return Response(status=201)

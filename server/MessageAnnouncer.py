@@ -1,7 +1,8 @@
 from queue import Queue, Full
 from typing import Tuple
-from server.models import Flag
 
+from prometheus_client import Gauge
+from server.models import Flag
 
 class FlagAnnouncer:
     def __init__(self):

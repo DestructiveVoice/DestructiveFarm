@@ -28,3 +28,5 @@ def spam_flag():
     arr = [random.choice(string.ascii_uppercase + string.digits) for _ in range(31)]
     flag = "".join(arr) + "="
     print(flag, flush=True)
+
+spam_flag()

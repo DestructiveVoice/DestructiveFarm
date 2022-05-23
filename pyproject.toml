@@ -10,6 +10,7 @@ python = "^3.10"
 Flask = "^2.1.2"
 requests = "^2.27.1"
 certifi = "^2021.10.8"
+prometheus-client = "^0.14.1"
 
 [tool.poetry.dev-dependencies]
 

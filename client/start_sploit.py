@@ -18,6 +18,7 @@ from enum import Enum
 from math import ceil
 from pathlib import Path
 from tempfile import gettempdir
+from typing import List, Set
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
@@ -348,11 +349,11 @@ class FlagStorage:
     """
 
     def __init__(self):
-        self._flags_seen = set[str]()
+        self._flags_seen: Set[str] = set()
         self._queue = []
         self._lock = threading.RLock()
 
-    def add(self, flags: list[str], team_name: str) -> None:
+    def add(self, flags: List[str], team_name: str) -> None:
         with self._lock:
             for flag in flags:
                 if flag not in self._flags_seen:

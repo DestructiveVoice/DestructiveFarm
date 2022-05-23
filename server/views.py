@@ -2,10 +2,12 @@ import re
 import time
 from datetime import datetime
 
-from flask import jsonify, render_template, request, Response
+from flask import Blueprint, jsonify, render_template, request, Response
 
 from server import app, auth, database, reloader
 from server.models import FlagStatus
+
+bp = Blueprint("views", __name__)
 
 
 @app.template_filter('timestamp_to_datetime')
@@ -13,7 +15,7 @@ def timestamp_to_datetime(s):
     return datetime.fromtimestamp(s)
 
 
-@app.route('/')
+@bp.route('/')
 @auth.auth_required
 def index():
     distinct_values = {}
@@ -38,7 +40,7 @@ FORM_DATETIME_FORMAT = '%Y-%m-%d %H:%M'
 FLAGS_PER_PAGE = 30
 
 
-@app.route('/ui/show_flags')
+@bp.route('/ui/show_flags')
 @auth.auth_required
 def show_flags():
     conditions = []
@@ -103,7 +105,7 @@ def show_flags():
     })
 
 
-@app.route('/ui/post_flags_manual', methods=['POST'])
+@bp.route('/ui/post_flags_manual', methods=['POST'])
 @auth.auth_required
 def post_flags_manual():
     config = reloader.get_config()
