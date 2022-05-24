@@ -2,8 +2,10 @@
 
 import importlib
 import random
+from sqlite3 import Connection
 import time
 from collections import defaultdict
+from typing import List
 
 from server import app, database, metrics, reloader
 from server.models import Flag, FlagStatus, SubmitResult
@@ -11,6 +13,23 @@ from server.models import Flag, FlagStatus, SubmitResult
 from .MessageAnnouncer import FlagAnnouncer
 
 flag_ann = FlagAnnouncer()
+
+
+def _update_metrics(db: Connection, processed_flags: List[Flag]):
+
+    # Update flags
+    queued_flags = db.execute(
+        "SELECT COUNT(*) as n" " FROM flags" " WHERE status = ?" " GROUP BY status",
+        (FlagStatus.QUEUED.name,),
+    ).fetchone()
+
+    if queued_flags:
+        metrics.QUEUED_FLAGS.set(queued_flags["n"])
+    else:
+        metrics.QUEUED_FLAGS.set(0)
+
+    for flag in processed_flags:
+        metrics.FLAGS[flag.status].labels(sploit=flag.sploit, team=flag.team).inc()
 
 
 def get_fair_share(groups, limit):
@@ -61,7 +80,26 @@ def run_loop():
     with app.app_context():
         db = database.get(context_bound=False)
 
-    cycle = db.execute("SELECT MAX(sent_cycle) AS last_cycle " "FROM flags").fetchone()[
+    old_flags = db.execute(
+        "SELECT * FROM flags WHERE status != ?", (FlagStatus.QUEUED.name,)
+    ).fetchall()
+
+    old_flags = [
+        Flag(
+            item["flag"],
+            item["sploit"],
+            item["team"],
+            item["time"],
+            FlagStatus[item["status"]],
+            item["checksystem_response"],
+            item["sent_cycle"],
+        )
+        for item in old_flags
+    ]
+
+    _update_metrics(db, old_flags)
+
+    cycle = db.execute("SELECT MAX(sent_cycle) AS last_cycle FROM flags").fetchone()[
         "last_cycle"
     ]
     if not cycle:
@@ -82,6 +120,7 @@ def run_loop():
         )
         db.commit()
 
+        # Get queued flags
         cursor = db.execute(
             "SELECT * FROM flags WHERE status = ?", (FlagStatus.QUEUED.name,)
         )
@@ -93,13 +132,17 @@ def run_loop():
             for item in queued_flags:
                 grouped_flags[item.sploit, item.team].append(item)
 
-            flags = get_fair_share(grouped_flags.values(), config["SUBMIT_FLAG_LIMIT"])
+            processed_flags = get_fair_share(
+                grouped_flags.values(), config["SUBMIT_FLAG_LIMIT"]
+            )
 
             app.logger.debug(
-                "Submitting %d flags (out of %d in queue)", len(flags), queued_flags_len
+                "Submitting %d flags (out of %d in queue)",
+                len(processed_flags),
+                queued_flags_len,
             )
             # Send flags to gameserver
-            results = submit_flags(flags, config)
+            results = submit_flags(processed_flags, config)
 
             rows = [
                 (item.status.name, item.checksystem_response, cycle, item.flag)
@@ -115,7 +158,7 @@ def run_loop():
 
             flags_status = {result.flag: result.status for result in results}
 
-            flags = list(
+            processed_flags = list(
                 map(
                     lambda item: Flag(
                         item.flag,
@@ -126,30 +169,28 @@ def run_loop():
                         item.checksystem_response,
                         item.sent_cycle,
                     ),
-                    flags,
+                    processed_flags,
                 )
             )
 
-            # Cout successful sent flags
-            sent_flags_len = len(
-                list(filter(lambda x: x.status != FlagStatus.SKIPPED, flags))
+            # Count sent flags
+            sent_flags = list(
+                filter(lambda x: x.status != FlagStatus.SKIPPED, processed_flags)
             )
-
-            metrics.SENT_FLAGS.inc(sent_flags_len)
-
             app.logger.info(
                 "Submitted %d flags (out of %d in queue)",
-                sent_flags_len,
+                len(sent_flags),
                 queued_flags_len,
             )
+            _update_metrics(db, processed_flags)
 
-            flag_ann.announce((cycle, flags))
+            flag_ann.announce((cycle, processed_flags))
 
         submit_spent = time.time() - submit_start_time
         metrics.SUBMITTER_LATENCY.observe(submit_spent)
 
         app.logger.debug(
-            "Submitter took %f seconds. The period is %d seconds",
+            "Took %f seconds. The period is %d seconds",
             submit_spent,
             config["SUBMIT_PERIOD"],
         )

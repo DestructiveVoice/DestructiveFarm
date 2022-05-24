@@ -19,7 +19,7 @@ def _random_string(length: int) -> str:
 
 
 def get_attack_info(config):
-    return {_random_string(10): _random_string(10) for _ in range(50000)}
+    return {_random_string(10): _random_string(10) for _ in range(100)}
 
 
 def get_attack_info_service(config):
@@ -27,4 +27,4 @@ def get_attack_info_service(config):
 
 
 def get_teams(config):
-    return {_random_string(10): _random_string(10) for _ in range(10)}
+    return {"Team1": "10.0.0.1", "Team2": "10.0.0.2", "Team3": "10.0.0.3"}

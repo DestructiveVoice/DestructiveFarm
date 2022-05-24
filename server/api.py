@@ -5,7 +5,7 @@ import time
 from flask import Blueprint, Response, jsonify, render_template, request
 
 from server import app, auth, config, database, metrics, reloader
-from server.models import FlagStatus
+from server.models import Flag, FlagStatus
 from server.spam import is_spam_flag
 
 from .submit_loop import flag_ann
@@ -68,8 +68,10 @@ def post_flags():
         "VALUES (?, ?, ?, ?, ?)",
         rows,
     )
-    metrics.RECIEVED_FLAGS.inc(cursor.rowcount)
     db.commit()
+
+    # Temporary update queued flags
+    metrics.QUEUED_FLAGS.inc(cursor.rowcount)
 
     return Response(status=201)
 

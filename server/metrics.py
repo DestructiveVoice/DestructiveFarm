@@ -1,6 +1,19 @@
-from prometheus_client import Counter, Summary
+from prometheus_client import Counter, Gauge, Summary
 
-SENT_FLAGS = Counter("flags_sent", "Number of flags sent")
-RECIEVED_FLAGS = Counter("flags_recieved", "Number of flags queued")
+from server.models import FlagStatus
+
+# Updated every submitter cycle
+QUEUED_FLAGS = Gauge("flags_queued", "Number of queued flags")
+FLAGS = {
+    FlagStatus.ACCEPTED: Counter(
+        "flags_accepted", "Number of sent flags", ["sploit", "team"]
+    ),
+    FlagStatus.SKIPPED: Counter(
+        "flags_skipped", "Number of skipped flags", ["sploit", "team"]
+    ),
+    FlagStatus.REJECTED: Counter(
+        "flags_rejected", "Numbers of rejected flags", ["sploit", "team"]
+    ),
+}
 
 SUBMITTER_LATENCY = Summary("submitter_latency", "Latency of the submitter")
